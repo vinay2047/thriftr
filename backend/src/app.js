@@ -10,8 +10,13 @@ import userRoutes from "./routes/user.routes.js";
 import productRoutes from "./routes/product.routes.js";
 import cartRoutes from "./routes/cart.routes.js";
 import reviewRoutes from "./routes/review.routes.js";
+
+import { swaggerSpec } from "./swagger.js";
+import swaggerUi from "swagger-ui-express";
+
 const app=express();
-const port=process.env.port|| 3000;
+const port=process.env.PORT|| 3000;
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use(cors({
     origin:"http://localhost:3000",
@@ -39,4 +44,5 @@ app.use((err, req, res, next) => {
 app.listen(port, async () => {
     await connectDB();
     console.log(`Server is running on port ${port}`);
+      console.log(`📖 Swagger docs available at http://localhost:${port}/api-docs`);
 });

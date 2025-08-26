@@ -2,6 +2,56 @@ import { User } from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 import { generateToken } from "../lib/token.js";
 
+/**
+ * @swagger
+ * /auth/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               role:
+ *                 type: string
+ *                 enum: [buyer, seller]
+ *               contactInfo:
+ *                 type: object
+ *                 properties:
+ *                   phoneNo:
+ *                     type: string
+ *                   contactEmail:
+ *                     type: string
+ *               location:
+ *                 type: object
+ *                 properties:
+ *                   city:
+ *                     type: string
+ *                   state:
+ *                     type: string
+ *                   country:
+ *                     type: string
+ *     responses:
+ *       201:
+ *         description: User registered successfully
+ *       400:
+ *         description: Validation error
+ *       500:
+ *         description: Server error
+ */
 export const register = async (req, res, next) => {
   try {
     const { name, email, password, role, contactInfo, location } = req.body;
@@ -69,6 +119,36 @@ export const register = async (req, res, next) => {
   }
 };
 
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: Login user and return JWT
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *       400:
+ *         description: Missing email or password
+ *       401:
+ *         description: Invalid credentials
+ *       404:
+ *         description: User not found
+ */
 export const login = async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -96,6 +176,16 @@ export const login = async (req, res) => {
   });
 };
 
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Logout user and clear JWT cookie
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ */
 export const logout = (req, res) => {
   res.clearCookie("jwt", {
     httpOnly: true,
@@ -105,6 +195,20 @@ export const logout = (req, res) => {
   return res.status(200).json({ message: "Logout successful", success: true });
 };
 
+/**
+ * @swagger
+ * /auth/check:
+ *   get:
+ *     summary: Check if user is authenticated
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User is authenticated
+ *       401:
+ *         description: Unauthorized
+ */
 export const checkAuth = async (req, res) => {
   const user = req.user;
   if (!user) {

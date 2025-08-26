@@ -4,8 +4,8 @@ import { protectRoute } from "../middlewares/auth.middleware.js";
 const router = Router();
 
 router.get("/",protectRoute,getCartItems);
-router.post("/",protectRoute,addToCart);
-router.delete("/",protectRoute,removeFromCart);
-router.put("/",protectRoute,updateQuantity);
+router.post("/add",protectRoute,addToCart);
+router.delete("/remove",protectRoute,removeFromCart);
+router.put("/update",protectRoute,updateQuantity);
 
 export default router;

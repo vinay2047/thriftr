@@ -23,12 +23,12 @@ const productSchema=new mongoose.Schema({
         type: [ImageSchema],
         required: true,
     },
-    reviews: {
-        type: [mongoose.Schema.Types.ObjectId],
-        ref:'Review',
-        default:[]
-    },
+
     averageRating: {
+        type: Number,
+        default: 0,
+    },
+    reviewCount: {
         type: Number,
         default: 0,
     },

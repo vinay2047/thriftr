@@ -1,17 +1,79 @@
 import { Product } from "../models/product.model.js";
 import { v2 as cloudinary } from "cloudinary";
 
+/**
+ * @swagger
+ * /products:
+ *   get:
+ *     summary: Get all products
+ *     tags: [Products]
+ *     responses:
+ *       200:
+ *         description: Products list
+ */
 export const getAllProducts=async(req,res)=>{
   const products=await Product.find({});
   res.status(200).json(products);
 };
 
+/**
+ * @swagger
+ * /products/{productId}:
+ *   get:
+ *     summary: Get product by ID
+ *     tags: [Products]
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Product found
+ *       404:
+ *         description: Product not found
+ */
 export const getProductById=async(req,res)=>{
   const {productId}=req.params;
-  const product=await Product.findById(productId).populate("sellerId,reviews");
+  const product=await Product.findById(productId).populate(["sellerId","reviews"]);
   res.status(200).json(product);
 };
 
+/**
+ * @swagger
+ * /products:
+ *   post:
+ *     summary: Create a new product (seller only)
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - description
+ *               - price
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               price:
+ *                 type: number
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *     responses:
+ *       201:
+ *         description: Product created
+ */
 export const createProduct=async(req,res)=>{
   const {title,description,price}=req.body;
   const newProduct=new Product({
@@ -25,6 +87,28 @@ export const createProduct=async(req,res)=>{
   res.status(201).json({message:"Product created successfully",product:newProduct});
 };
 
+/**
+ * @swagger
+ * /products/{productId}:
+ *   put:
+ *     summary: Update product (seller only)
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Product updated
+ *       403:
+ *         description: Not authorized
+ *       404:
+ *         description: Product not found
+ */
 export const updateProduct=async(req,res)=>{
   const {productId}=req.params;
   const userId=req.user._id;
@@ -47,6 +131,28 @@ export const updateProduct=async(req,res)=>{
   res.status(200).json({message:"Product updated successfully",product});
 };
 
+/**
+ * @swagger
+ * /products/{productId}:
+ *   delete:
+ *     summary: Delete product (seller only)
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Product deleted
+ *       403:
+ *         description: Not authorized
+ *       404:
+ *         description: Product not found
+ */
 export const deleteProduct=async(req,res)=>{
   const {productId}=req.params;
   const userId=req.user._id;
