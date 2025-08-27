@@ -38,36 +38,32 @@ import { User } from "../models/user.model.js";
  *         description: User not found
  */
 export const updateUser = async (req, res) => {
-  try {
-    const { contactInfo, location } = req.body;
-    const userId = req.user._id;
+  const { contactInfo, location } = req.body;
+  const userId = req.user._id;
 
-    if (
-      !contactInfo ||
-      !location ||
-      !contactInfo.phoneNo ||
-      !location.city ||
-      !location.state ||
-      !location.country
-    ) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { contactInfo, location },
-      { new: true }
-    );
-
-    res.status(200).json(updatedUser);
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+  if (
+    !contactInfo ||
+    !location ||
+    !contactInfo.phoneNo ||
+    !location.city ||
+    !location.state ||
+    !location.country
+  ) {
+    return res.status(400).json({ message: "All fields are required" });
   }
+
+  const user = await User.findById(userId);
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  const updatedUser = await User.findByIdAndUpdate(
+    userId,
+    { contactInfo, location },
+    { new: true }
+  );
+
+  return res.status(200).json(updatedUser);
 };
 
 /**
@@ -85,14 +81,10 @@ export const updateUser = async (req, res) => {
  *         description: User not found
  */
 export const getUserOrders = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const user = await User.findById(userId).populate("orders");
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-    res.status(200).json(user.orders);
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+  const userId = req.user._id;
+  const user = await User.findById(userId).populate("orders");
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
   }
+  return res.status(200).json(user.orders);
 };

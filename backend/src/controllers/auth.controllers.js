@@ -4,7 +4,7 @@ import { generateToken } from "../lib/token.js";
 
 /**
  * @swagger
- * /auth/register:
+ * /auth/signup:
  *   post:
  *     summary: Register a new user
  *     tags: [Auth]
@@ -52,71 +52,69 @@ import { generateToken } from "../lib/token.js";
  *       500:
  *         description: Server error
  */
-export const register = async (req, res, next) => {
-  try {
-    const { name, email, password, role, contactInfo, location } = req.body;
+export const signup = async (req, res) => {
+  const { name, email, password, role, contactInfo, location } = req.body;
 
-    if (!name || !email || !password) {
-      return res
-        .status(400)
-        .json({ message: "Name, email, and password are required" });
-    }
-
-    if (role && !["buyer", "seller"].includes(role)) {
-      return res.status(400).json({ message: "Invalid role specified" });
-    }
-
-    if (role === "seller") {
-      if (
-        !contactInfo?.phoneNo ||
-        !contactInfo?.contactEmail ||
-        !location?.city ||
-        !location?.state ||
-        !location?.country
-      ) {
-        return res.status(400).json({
-          message:
-            "Contact information (including phone number and contact email) and location are required for sellers.",
-        });
-      }
-    }
-
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const isAdmin = email === process.env.ADMIN_EMAIL;
-
-    const newUser = {
-      name,
-      email,
-      password: hashedPassword,
-      role: isAdmin ? "admin" : role || "buyer",
-    };
-
-    if (role === "seller") {
-      newUser.contactInfo = contactInfo;
-      newUser.location = location;
-    }
-
-    const registeringUser = new User(newUser);
-    await registeringUser.save();
-    generateToken(registeringUser._id, isAdmin, res);
-
-    return res.status(201).json({
-      message: "User registered successfully",
-      user: {
-        _id: registeringUser._id,
-        name: registeringUser.name,
-        email: registeringUser.email,
-        role: registeringUser.role,
-      },
-    });
-  } catch (error) {
-    next(error);
+  if (!name || !email || !password) {
+    return res
+      .status(400)
+      .json({success: false, message: "Name, email, and password are required" });
   }
+
+  if (role && !["buyer", "seller"].includes(role)) {
+    return res.status(400).json({success: false, message: "Invalid role specified" });
+  }
+
+  if (role === "seller") {
+    if (
+      !contactInfo?.phoneNo ||
+      !contactInfo?.contactEmail ||
+      !location?.city ||
+      !location?.state ||
+      !location?.country
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Contact information (including phone number and contact email) and location are required for sellers.",
+      });
+    }
+  }
+
+  const existingUser = await User.findOne({ email });
+  if (existingUser) {
+    return res.status(400).json({success: false, message: "User already exists" });
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const isAdmin = email === process.env.ADMIN_EMAIL;
+
+  const newUser = {
+    name,
+    email,
+    password: hashedPassword,
+    role: isAdmin ? "admin" : role || "buyer",
+  };
+
+  if (role === "seller") {
+    newUser.contactInfo = contactInfo;
+    newUser.location = location;
+  }
+
+  const registeringUser = new User(newUser);
+  await registeringUser.save();
+  generateToken(registeringUser._id, isAdmin, res);
+
+  return res.status(201).json({
+    success: true,
+    message: "User registered successfully",
+    user: {
+      _id: registeringUser._id,
+      name: registeringUser.name,
+      email: registeringUser.email,
+      role: registeringUser.role,
+    },
+  });
 };
 
 /**
@@ -152,7 +150,7 @@ export const register = async (req, res, next) => {
 export const login = async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
-    return res.status(400).json({ message: "Email and password are required" });
+    return res.status(400).json({ success: false, message: "Email and password are required" });
   }
   const user = await User.findOne({ email });
   if (!user) {
@@ -160,11 +158,12 @@ export const login = async (req, res) => {
   }
   const isCorrectPassword = await bcrypt.compare(password, user.password);
   if (!isCorrectPassword) {
-    return res.status(401).json({ message: "Invalid credentials" });
+    return res.status(401).json({ success: false, message: "Invalid credentials" });
   }
   const isAdmin = user.role === "admin";
- const token= generateToken(user._id, isAdmin, res);
+  const token = generateToken(user._id, isAdmin, res);
   return res.status(200).json({
+    success: true,
     message: "Login successful",
     token,
     user: {
@@ -192,7 +191,7 @@ export const logout = (req, res) => {
     sameSite: "strict",
     secure: process.env.NODE_ENV !== "development",
   });
-  return res.status(200).json({ message: "Logout successful", success: true });
+  return res.status(200).json({success: true, message: "Logout successful", success: true });
 };
 
 /**

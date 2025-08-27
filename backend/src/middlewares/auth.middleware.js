@@ -15,7 +15,7 @@ export const protectRoute = async (req, res, next) => {
             isVerified= jwt.verify(token, process.env.JWT_SECRET);
         } catch (err) {
             try {
-                isVerified = jwt.verify(token, process.env.ADMIN_JWT_SECRET);
+                isVerified = jwt.verify(token, process.env.ASSIGNMENT_SEED);
             } catch (adminErr) {
                 return res.status(401).json({ message: "Unauthorized: Invalid Token" });
             }
