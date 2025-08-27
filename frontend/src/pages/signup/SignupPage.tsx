@@ -64,7 +64,7 @@ export default function SignupPage() {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <div className="flex flex-1">
-        <div className="flex justify-center items-center w-1/2 ml-1">
+        <div className="flex justify-center items-start w-1/2 ml-1 mt-17">
           <Card className="w-full max-w-sm shadow-md rounded-2xl">
             <CardHeader>
               <CardTitle className="text-lg font-semibold">

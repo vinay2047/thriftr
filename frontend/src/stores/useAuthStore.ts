@@ -44,7 +44,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
         })
         if(response.data.success){
             set({authUser:response.data.user})
-            toast.success("Login successful")
+            toast.success(`Welcome back ${response.data.user.name}!`)
         }
       } catch (error) {
         toast.error("Login failed")

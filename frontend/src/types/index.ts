@@ -14,3 +14,35 @@ export interface User{
         country: string;
     };
 }
+
+export interface Product {
+  _id: string;
+  title: string;
+  description: string;
+  category: string;
+  price: number;
+  images: { url: string; filename: string }[];
+  averageRating: number;
+  reviewCount: number;
+  sellerId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProductFilters {
+  search: string;
+  category: string;
+  minPrice: string | number;
+  maxPrice: string | number;
+  limit: number;
+}
+
+export interface ProductsResponse {
+  products: Product[];
+  currentPage: number;
+  totalPages: number;
+  totalProducts: number;
+}
+
+
+

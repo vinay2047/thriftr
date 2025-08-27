@@ -38,6 +38,7 @@ export default function LoginPage() {
       navigate("/");
     }
   };
+
   useEffect(() => {
     document.body.style.overflow = "hidden";
 
@@ -45,11 +46,12 @@ export default function LoginPage() {
       document.body.style.overflow = "auto";
     };
   }, []);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <div className="flex flex-1">
-        <div className="flex justify-center items-center w-1/2 px-4">
+        <div className="flex justify-center items-start w-1/2 px-4 mt-17">
           <Card className="w-full max-w-sm shadow-md rounded-2xl min-h-[32rem]">
             <CardHeader className="mt-3 pb-6">
               <CardTitle className="text-lg font-semibold">
