@@ -23,7 +23,7 @@ export const getProductReviews = async (req, res) => {
     const { productId } = req.params;
     const product = await Product.findById(productId);
     if(!product) return res.status(404).json({ message: "Product not found" });
-    const reviews = await Review.find({ productId });
+    const reviews = await Review.find({ productId }).populate({path: "authorId", select: "-password -__v"});
     res.status(200).json(reviews);
 }
 
@@ -127,5 +127,5 @@ export const deleteProductReview = async (req, res) => {
   }
 
   await product.save();
-  res.status(200).json({ message: "Review deleted successfully" });
+  res.status(200).json({ success: true, message: "Review deleted successfully" });
 };

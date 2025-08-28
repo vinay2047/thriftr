@@ -42,6 +42,10 @@ const productSchema=new mongoose.Schema({
         ref: "User",
         required: true,
     },
+    SKU:{
+        type: String,
+        required: true
+    }
 
 },{timestamps:true});
 

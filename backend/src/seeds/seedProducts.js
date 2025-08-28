@@ -1,15 +1,28 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import crypto from 'crypto';
 dotenv.config();
+
 // MongoDB connection string
 const MONGODB_URI = process.env.MONGODB_URI;
 
 // Import your existing models (adjust paths as needed)
 // Assuming you have User and Product models exported from your models folder
- import { User } from '../models/user.model.js';
- import { Product } from '../models/product.model.js';
+import { User } from '../models/user.model.js';
+import { Product } from '../models/product.model.js';
 
-// If you can't import, create minimal references
+// SKU Generator
+const ASSIGNMENT_SEED = process.env.ASSIGNMENT_SEED || "GHW25-12345";
+
+function getSeedChecksum() {
+  const hash = crypto.createHash("md5").update(ASSIGNMENT_SEED).digest("hex");
+  return hash.slice(0, 4).toUpperCase();
+}
+
+export function generateSKU(productId) {
+  const checksum = getSeedChecksum();
+  return `SKU-${productId}-${checksum}`;
+}
 
 // Sample product data
 const sampleProducts = [
@@ -261,6 +274,11 @@ const seedProductsDirectly = async () => {
     await mongoose.connect(MONGODB_URI);
     console.log('Connected to MongoDB');
     
+    // Clear existing products
+    console.log('Clearing existing products...');
+    await Product.deleteMany({});
+    console.log('Existing products cleared');
+    
     // Get sellers from database
     console.log('Fetching sellers from database...');
     const sellers = await User.find({ role: 'seller' }).select('_id email role');
@@ -304,8 +322,13 @@ const seedProductsDirectly = async () => {
           reviewCount: 0
         });
         
+ 
+        // Generate and update SKU after product is saved (so we have the _id)
+        const sku = generateSKU(newProduct._id);
+        newProduct.SKU = sku;
         await newProduct.save();
-        console.log(`Successfully created: ${productData.title}`);
+        
+        console.log(`Successfully created: ${productData.title} with SKU: ${sku}`);
         createdProducts++;
         
       } catch (error) {
@@ -346,8 +369,14 @@ const seedProductsDirectly = async () => {
           reviewCount: 0
         });
         
+        
+        
+        // Generate and update SKU after product is saved (so we have the _id)
+        const sku = generateSKU(newProduct._id);
+        newProduct.SKU = sku;
         await newProduct.save();
-        console.log(`Successfully created additional: ${modifiedProduct.title}`);
+        
+        console.log(`Successfully created additional: ${modifiedProduct.title} with SKU: ${sku}`);
         createdProducts++;
         
       } catch (error) {

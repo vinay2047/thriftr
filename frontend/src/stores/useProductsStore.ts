@@ -1,7 +1,6 @@
 import { axiosInstance } from "@/lib/axios";
-import type { ProductFilters, ProductsResponse, Product} from "@/types";
+import type { ProductFilters, ProductsResponse, Product } from "@/types";
 import { create } from "zustand";
-
 
 export interface ProductsStore {
   products: Product[];
@@ -14,8 +13,6 @@ export interface ProductsStore {
   setFilters: (filters: Partial<ProductFilters>) => void;
   fetchProducts: (page?: number) => Promise<void>;
 }
-
-
 
 export const useProductsStore = create<ProductsStore>((set, get) => ({
   products: [],

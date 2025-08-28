@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom"; // ✅ for navigation
 import Navbar from "../../components/Navbar"; // adjust path
 import { useProductsStore } from "../../stores/useProductsStore";
 import { Input } from "@/components/ui/input";
@@ -19,7 +20,7 @@ import {
   PaginationLink,
 } from "@/components/ui/pagination";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Filter } from "lucide-react"; // ✅ commonly used filter icon
+import { Filter } from "lucide-react";
 
 export default function ProductsPage() {
   const {
@@ -42,6 +43,8 @@ export default function ProductsPage() {
   const [openFilters, setOpenFilters] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  const navigate = useNavigate(); // ✅ navigation hook
+
   // Load products initially
   useEffect(() => {
     const load = async () => {
@@ -62,12 +65,12 @@ export default function ProductsPage() {
     setIsLoading(true);
     await fetchProducts(1);
     setIsLoading(false);
-    setOpenFilters(false); // close dialog
+    setOpenFilters(false); 
   };
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Navbar */}
+    
       <Navbar />
 
       {/* Search + Filter Trigger */}
@@ -172,7 +175,11 @@ export default function ProductsPage() {
           ))
         ) : products.length > 0 ? (
           products.map((product) => (
-            <Card key={product._id} className="hover:shadow-md">
+            <Card
+              key={product._id}
+              className="hover:shadow-md cursor-pointer"
+              onClick={() => navigate(`/products/${product._id}`)} // ✅ product navigation
+            >
               <CardHeader>
                 <CardTitle>{product.title}</CardTitle>
               </CardHeader>
@@ -186,6 +193,17 @@ export default function ProductsPage() {
                 )}
                 <p className="text-gray-700">${product.price}</p>
                 <p className="text-sm text-gray-500">{product.category}</p>
+
+                {/* ✅ Add to Cart button */}
+                <Button
+                  className="mt-3 w-full"
+                  onClick={(e) => {
+                    e.stopPropagation(); // prevent card click from navigating
+                    console.log("Added to cart:", product._id);
+                  }}
+                >
+                  Add to Cart
+                </Button>
               </CardContent>
             </Card>
           ))

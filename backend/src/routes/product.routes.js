@@ -5,7 +5,7 @@ import { upload } from "../lib/cloudinary.js";
 const router = Router();
 
 router.get("/",getAllProducts);
-router.get("/:productId",protectRoute,getProductById);
+router.get("/:productId",getProductById);
 router.post("/create",protectRoute,isSeller,upload.array("images",3),createProduct);
 router.put("/update/:productId",protectRoute,isSeller,upload.array("images",3),updateProduct);
 router.delete("/:productId",protectRoute,isSeller,deleteProduct);

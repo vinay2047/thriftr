@@ -46,3 +46,12 @@ export interface ProductsResponse {
 
 
 
+export interface Review {
+  _id: string;
+  authorId: string;
+  productId: string;
+  rating: number;
+  review: string;
+  createdAt: string;
+  updatedAt: string;
+}

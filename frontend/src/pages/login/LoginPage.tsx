@@ -33,10 +33,8 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    login(formData as any);
-    if (authUser) {
-      navigate("/");
-    }
+   login(formData as any);
+    
   };
 
   useEffect(() => {
@@ -46,6 +44,12 @@ export default function LoginPage() {
       document.body.style.overflow = "auto";
     };
   }, []);
+
+  useEffect(() => {
+  if (authUser) {
+    navigate("/products");
+  }
+}, [authUser, navigate]);
 
   return (
     <div className="min-h-screen flex flex-col">

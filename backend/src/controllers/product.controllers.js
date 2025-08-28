@@ -1,6 +1,6 @@
 import { Product } from "../models/product.model.js";
 import { v2 as cloudinary } from "cloudinary";
-
+import { generateSKU } from "../lib/skuGenerator.js";
 /**
  * @swagger
  * /products:
@@ -101,7 +101,8 @@ export const getAllProducts = async (req, res) => {
  */
 export const getProductById = async (req, res) => {
   const { productId } = req.params;
-  const product = await Product.findById(productId).populate(["sellerId", "reviews"]);
+  const product = await Product.findById(productId).populate({path: "sellerId",
+    select: "-password -__v"})
   res.status(200).json(product);
 };
 
@@ -142,9 +143,18 @@ export const getProductById = async (req, res) => {
  *     responses:
  *       201:
  *         description: Product created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 product:
+ *                   $ref: '#/components/schemas/Product'
  */
 export const createProduct = async (req, res) => {
-  const { title, description, price, category } = req.body;
+  const { title, description, price, category } = req.body
   const newProduct = new Product({
     title,
     description,
@@ -152,10 +162,15 @@ export const createProduct = async (req, res) => {
     category,
     sellerId: req.user._id,
     images: req.files ? req.files.map(f => ({ url: f.path, filename: f.filename })) : []
-  });
-  await newProduct.save();
-  res.status(201).json({ message: "Product created successfully", product: newProduct });
-};
+  })
+
+ 
+  newProduct.SKU = generateSKU(newProduct._id.toString())
+
+  await newProduct.save()
+  res.status(201).json({ message: "Product created successfully", product: newProduct })
+}
+
 
 /**
  * @swagger
