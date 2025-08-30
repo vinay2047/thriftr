@@ -46,12 +46,16 @@ export interface ProductsResponse {
 
 
 
-export interface Review {
-  _id: string;
-  authorId: string;
+export type Review = {
+  _id?: string;
   productId: string;
-  rating: number;
+  authorId: string | { _id: string; name: string };
   review: string;
+  rating: number;
   createdAt: string;
-  updatedAt: string;
+  updatedAt:string
+};
+
+export interface CartItem extends Product {
+  quantity: number;
 }

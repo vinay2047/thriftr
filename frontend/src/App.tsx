@@ -11,6 +11,8 @@ import ProductsPage from "./pages/products/ProductsPage";
 import ProductDetails from "./pages/products/components/ProductDetails";
 import { useEffect } from "react";
 import { useAuthStore } from "./stores/useAuthStore";
+import CartPage from "./pages/cart/CartPage";
+import OrdersPage from "./pages/orders/OrdersPage";
 
 function App() {
   const {checkAuth}=useAuthStore()
@@ -27,6 +29,8 @@ function App() {
         <Route path="/login" element={<LoginPage/>} />
         <Route path="/products" element={<ProductsPage/>} />
         <Route path="/products/:productId" element={<ProductDetails />} />
+        <Route path="/cart" element={<CartPage/>} />
+        <Route path="/orders" element={<OrdersPage/>} />
         <Route path="/IIT2024194/healthz" element={<div>Frontend Alive!</div>} />
       </Routes>
     </ThemeProvider>

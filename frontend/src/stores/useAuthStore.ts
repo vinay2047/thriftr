@@ -72,14 +72,16 @@ export const useAuthStore = create<AuthStore>((set) => ({
   checkAuth: async () => {
     try {
       const response = await axiosInstance.get("/auth/check", {
-        withCredentials: true, // if using cookies
+        withCredentials: true, 
       });
       if (response.data.user) {
         set({ authUser: response.data.user });
-      }
+      }else {
+      set({ authUser: null });
+    }
     } catch (error: any) {
       set({ authUser: null });
       console.log("Not authorized", error);
     }
-  },
+  }
 }));

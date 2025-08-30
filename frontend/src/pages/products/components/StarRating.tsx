@@ -1,18 +1,17 @@
-import { useState } from "react";
 import { Star } from "lucide-react";
+import { useState } from "react";
 
 interface StarRatingProps {
   totalStars?: number;
+  rating: number;               
   onChange?: (value: number) => void;
 }
 
-export default function StarRating({ totalStars = 5, onChange }: StarRatingProps) {
-  const [rating, setRating] = useState<number>(0);
+export default function StarRating({ totalStars = 5, rating, onChange }: StarRatingProps) {
   const [hover, setHover] = useState<number | null>(null);
 
   const handleClick = (value: number) => {
-    setRating(value);
-    onChange?.(value);
+    onChange?.(value); // Parent handles the state now
   };
 
   return (

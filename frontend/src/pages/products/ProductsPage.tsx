@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom"; // ✅ for navigation
-import Navbar from "../../components/Navbar"; // adjust path
+import { useNavigate } from "react-router-dom";
+import Navbar from "../../components/Navbar";
 import { useProductsStore } from "../../stores/useProductsStore";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,8 +19,16 @@ import {
   PaginationItem,
   PaginationLink,
 } from "@/components/ui/pagination";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Filter } from "lucide-react";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { useCartStore } from "@/stores/useCartStore";
+import { toast } from "sonner";
 
 export default function ProductsPage() {
   const {
@@ -32,28 +40,36 @@ export default function ProductsPage() {
     filters,
   } = useProductsStore();
 
+  const { authUser } = useAuthStore();
+  const {
+    cartItems,
+    addToCart,
+    updateProductQuantity,
+    deleteFromCart,
+    fetchCartItems,
+  } = useCartStore();
+
   const [search, setSearch] = useState(filters.search);
   const [category, setCategory] = useState(filters.category);
   const [priceRange, setPriceRange] = useState<[number, number]>([
     Number(filters.minPrice) || 0,
     Number(filters.maxPrice) || 1000,
   ]);
-  const [sort, setSort] = useState("default"); // fake sorting options
-
+  const [sort, setSort] = useState("default");
   const [openFilters, setOpenFilters] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const navigate = useNavigate(); // ✅ navigation hook
+  const navigate = useNavigate();
 
-  // Load products initially
   useEffect(() => {
     const load = async () => {
       setIsLoading(true);
       await fetchProducts(1);
+      await fetchCartItems();
       setIsLoading(false);
     };
     load();
-  }, [fetchProducts]);
+  }, [fetchProducts, fetchCartItems]);
 
   const handleApplyFilters = async () => {
     setFilters({
@@ -65,15 +81,47 @@ export default function ProductsPage() {
     setIsLoading(true);
     await fetchProducts(1);
     setIsLoading(false);
-    setOpenFilters(false); 
+    setOpenFilters(false);
+  };
+
+  const handleAddToCart = async (productId: string) => {
+    if (!authUser) {
+      navigate("/login");
+      toast.error("Please login to add to cart");
+      return;
+    }
+
+    // optimistic UI
+    const existing = cartItems.find((item) => item._id === productId);
+    if (existing) {
+      updateProductQuantity(productId, existing.quantity + 1);
+    } else {
+      addToCart(productId);
+    }
+  };
+
+  const handleDecreaseQuantity = async (
+    productId: string,
+    quantity: number
+  ) => {
+    if (quantity === 1) {
+      deleteFromCart(productId);
+    } else {
+      updateProductQuantity(productId, quantity - 1);
+    }
+  };
+
+  const handleIncreaseQuantity = async (
+    productId: string,
+    quantity: number
+  ) => {
+    updateProductQuantity(productId, quantity + 1);
   };
 
   return (
     <div className="min-h-screen flex flex-col">
-    
       <Navbar />
 
-      {/* Search + Filter Trigger */}
       <div className="pt-20 px-6 flex justify-center">
         <div className="flex items-center w-full max-w-2xl gap-2">
           <Input
@@ -82,24 +130,28 @@ export default function ProductsPage() {
             onChange={(e) => setSearch(e.target.value)}
             className="flex-1"
           />
-          <Button variant="outline" size="icon" onClick={() => setOpenFilters(true)}>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setOpenFilters(true)}
+          >
             <Filter className="h-5 w-5" />
           </Button>
         </div>
       </div>
 
-      {/* Filter Dialog */}
       <Dialog open={openFilters} onOpenChange={setOpenFilters}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Filters & Sorting</DialogTitle>
           </DialogHeader>
-
           <div className="flex flex-col gap-4">
-            {/* Category */}
             <div>
               <p className="text-sm font-medium mb-2">Category</p>
-              <Select value={category} onValueChange={(val) => setCategory(val)}>
+              <Select
+                value={category}
+                onValueChange={(val) => setCategory(val)}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
@@ -122,7 +174,6 @@ export default function ProductsPage() {
               </Select>
             </div>
 
-            {/* Price Range */}
             <div>
               <p className="text-sm font-medium mb-2">
                 Price Range: ${priceRange[0]} - ${priceRange[1]}
@@ -136,7 +187,6 @@ export default function ProductsPage() {
               />
             </div>
 
-            {/* Sorting */}
             <div>
               <p className="text-sm font-medium mb-2">Sort By</p>
               <Select value={sort} onValueChange={(val) => setSort(val)}>
@@ -145,8 +195,12 @@ export default function ProductsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="default">Default</SelectItem>
-                  <SelectItem value="price-low-high">Price: Low to High</SelectItem>
-                  <SelectItem value="price-high-low">Price: High to Low</SelectItem>
+                  <SelectItem value="price-low-high">
+                    Price: Low to High
+                  </SelectItem>
+                  <SelectItem value="price-high-low">
+                    Price: High to Low
+                  </SelectItem>
                   <SelectItem value="newest">Newest</SelectItem>
                   <SelectItem value="popular">Most Popular</SelectItem>
                 </SelectContent>
@@ -158,7 +212,6 @@ export default function ProductsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Products Grid */}
       <div className="flex-1 p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {isLoading ? (
           Array.from({ length: 8 }).map((_, i) => (
@@ -174,39 +227,79 @@ export default function ProductsPage() {
             </Card>
           ))
         ) : products.length > 0 ? (
-          products.map((product) => (
-            <Card
-              key={product._id}
-              className="hover:shadow-md cursor-pointer"
-              onClick={() => navigate(`/products/${product._id}`)} // ✅ product navigation
-            >
-              <CardHeader>
-                <CardTitle>{product.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {product.images?.[0] && (
-                  <img
-                    src={product.images[0].url}
-                    alt={product.title}
-                    className="w-full h-40 object-cover rounded mb-2"
-                  />
-                )}
-                <p className="text-gray-700">${product.price}</p>
-                <p className="text-sm text-gray-500">{product.category}</p>
+          products.map((product) => {
+            const cartItem = cartItems.find((item) => item._id === product._id);
 
-                {/* ✅ Add to Cart button */}
-                <Button
-                  className="mt-3 w-full"
-                  onClick={(e) => {
-                    e.stopPropagation(); // prevent card click from navigating
-                    console.log("Added to cart:", product._id);
-                  }}
-                >
-                  Add to Cart
-                </Button>
-              </CardContent>
-            </Card>
-          ))
+            return (
+              <Card
+                key={product._id}
+                className="hover:shadow-md cursor-pointer"
+                onClick={() => navigate(`/products/${product._id}`)}
+              >
+                <CardHeader>
+                  <CardTitle>{product.title}</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col h-full">
+                  {product.images?.[0] && (
+                    <img
+                      src={product.images[0].url}
+                      alt={product.title}
+                      className="w-full h-40 object-cover rounded mb-2"
+                    />
+                  )}
+                  <p className="text-gray-700">${product.price}</p>
+                  <p className="text-sm text-gray-500">{product.category}</p>
+                  <div className="flex-1" /> {/* pushes button to bottom */}
+                  {cartItem ? (
+                    <div className="flex items-center justify-center gap-2 mt-3">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDecreaseQuantity(
+                            product._id,
+                            cartItem.quantity
+                          );
+                        }}
+                        disabled={isLoading}
+                      >
+                        -
+                      </Button>
+                      <span>{cartItem.quantity}</span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleIncreaseQuantity(
+                            product._id,
+                            cartItem.quantity
+                          );
+                        }}
+                        disabled={isLoading}
+                      >
+                        +
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex justify-center">
+                      <Button
+                        className="mt-3 w-full"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddToCart(product._id);
+                        }}
+                        disabled={isLoading}
+                      >
+                        Add to Cart
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })
         ) : (
           <p className="col-span-full text-center text-gray-500">
             No products found
@@ -214,7 +307,6 @@ export default function ProductsPage() {
         )}
       </div>
 
-      {/* Pagination */}
       <div className="w-full flex justify-center py-6">
         <Pagination>
           <PaginationContent>

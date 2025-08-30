@@ -63,6 +63,13 @@ export const getProductReviews = async (req, res) => {
 export const createProductReview = async (req, res) => {
   const { rating, review, productId } = req.body;
   const userId = req.user._id;
+    if (!productId || !rating) {
+      return res.status(400).json({ message: "Product ID and rating are required" });
+    }
+
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({ message: "Rating must be between 1 and 5" });
+    }
   const product = await Product.findById(productId);
   if (!product) return res.status(404).json({ message: "Product not found" });
 

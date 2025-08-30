@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { axiosInstance } from "@/lib/axios";
-import type { Product, Review } from "@/types";
+import type { Product } from "@/types";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, CreditCard, Trash, Star } from "lucide-react";
+import { ShoppingCart, CreditCard, Star } from "lucide-react";
 import {
   Carousel,
   CarouselContent,
@@ -11,27 +11,55 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { useReviewStore } from "@/stores/useReviewStore";
-import { useAuthStore } from "@/stores/useAuthStore";
 import Navbar from "@/components/Navbar";
-import { format } from "date-fns";
-import StarRating from "./StarRating";
+import ReviewsSection from "./ReviewsSection";
+import SellerDetails from "./SellerDetails";
+import { useCartStore } from "@/stores/useCartStore";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { toast } from "sonner";
 
 export default function ProductDetails() {
   const { productId } = useParams<{ productId: string }>();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
-  const [reviewText, setReviewText] = useState("");
-  const [rating, setRating] = useState(0);
-
-  const { reviews, fetchReviews, createReview, deleteReview, isLoading } =
-    useReviewStore();
+  const { cartItems, addToCart, updateProductQuantity, deleteFromCart } =
+    useCartStore();
   const { authUser } = useAuthStore();
+  const navigate = useNavigate();
+
+  const handleAddToCart = (productId: string) => {
+    if (!authUser) {
+      navigate("/login");
+      toast.error("Please login to add to cart");
+      return;
+    }
+
+    const existing = cartItems.find((item) => item._id === productId);
+    if (existing) {
+      updateProductQuantity(productId, existing.quantity + 1);
+    } else {
+      addToCart(productId);
+    }
+  };
+
+  const handleDecreaseQuantity = (productId: string, quantity: number) => {
+    if (quantity === 1) {
+      deleteFromCart(productId);
+    } else {
+      updateProductQuantity(productId, quantity - 1);
+    }
+  };
+
+  const handleIncreaseQuantity = (productId: string, quantity: number) => {
+    updateProductQuantity(productId, quantity + 1);
+  };
 
   const fetchProductDetails = async () => {
     try {
       setLoading(true);
-      const res = await axiosInstance.get<Product>(`/products/${productId}`);
+      const res = await axiosInstance.get<Product>(
+        `/products/${productId}`
+      );
       setProduct(res.data);
     } catch (err) {
       console.error("Error fetching product:", err);
@@ -41,26 +69,8 @@ export default function ProductDetails() {
   };
 
   useEffect(() => {
-    if (productId) {
-      fetchProductDetails();
-      fetchReviews(productId);
-    }
+    if (productId) fetchProductDetails();
   }, [productId]);
-
-  const handleReviewSubmit = async () => {
-    if (!authUser || !productId) return;
-
-    const newReview: Review = {
-      productId,
-      authorId: authUser._id,
-      review: reviewText,
-      rating,
-    };
-
-    createReview(newReview);
-    setReviewText("");
-    setRating(0);
-  };
 
   if (loading) {
     return (
@@ -78,7 +88,7 @@ export default function ProductDetails() {
     );
   }
 
-  const seller = typeof product.sellerId === "object" ? product.sellerId : null;
+  const cartItem = cartItems.find((item) => item._id === product._id);
 
   return (
     <div>
@@ -107,17 +117,55 @@ export default function ProductDetails() {
         <h1 className="text-3xl font-bold mb-2">{product.title}</h1>
         <p className="text-gray-600 mb-4">{product.description}</p>
 
+        {/* Average Rating */}
+        <div className="flex items-center gap-2 mb-2">
+          <span className="flex items-center gap-1  text-yellow-400 font-medium">
+            {product.averageRating?.toFixed(1)} <Star className="h-4 w-4" />
+          </span>
+          <span className="text-gray-500 text-sm">
+            Rated by {product.reviewCount || 0} {product.reviewCount === 1 ? "person" : "people"}
+          </span>
+        </div>
+
         <div className="flex items-center space-x-6 mb-2">
           <span className="text-2xl font-semibold text-purple-600">
             ₹{product.price}
           </span>
         </div>
 
+        {/* Add to Cart / Quantity Buttons */}
         <div className="flex gap-4 mb-10">
-          <Button className="flex items-center gap-2 bg-purple-600 text-white hover:bg-purple-700">
-            <ShoppingCart className="h-4 w-4" />
-            Add to Cart
-          </Button>
+          {cartItem ? (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() =>
+                  handleDecreaseQuantity(product._id!, cartItem.quantity)
+                }
+              >
+                -
+              </Button>
+              <span>{cartItem.quantity}</span>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() =>
+                  handleIncreaseQuantity(product._id!, cartItem.quantity)
+                }
+              >
+                +
+              </Button>
+            </div>
+          ) : (
+            <Button
+              className="flex items-center gap-2 bg-purple-600 text-white hover:bg-purple-700"
+              onClick={() => handleAddToCart(product._id!)}
+            >
+              <ShoppingCart className="h-4 w-4" />
+              Add to Cart
+            </Button>
+          )}
           <Button
             variant="outline"
             className="flex items-center gap-2 border-purple-600 text-purple-600 hover:bg-purple-50"
@@ -127,95 +175,9 @@ export default function ProductDetails() {
           </Button>
         </div>
 
-        {/* Seller Info (moved below buttons) */}
-        {seller && (
-          <div className="p-4 border rounded-xl shadow-sm mb-6">
-            <h2 className="text-xl font-semibold mb-2">Seller Details</h2>
-            <p className="text-gray-700">{(seller as any).name}</p>
-            {(seller as any).contactInfo && (
-              <div className="text-sm text-gray-600 mt-1">
-                <p>Email: {(seller as any).contactInfo.email}</p>
-                <p>Phone: {(seller as any).contactInfo.phone}</p>
-                <p>Location: {(seller as any).contactInfo.location}</p>
-              </div>
-            )}
-          </div>
-        )}
+        <SellerDetails seller={product.sellerId} />
 
-        {/* Reviews Section */}
-        <div className="p-4 border rounded-xl shadow-sm">
-          <h2 className="text-xl font-semibold mb-4">Write a Review</h2>
-          {/* ✅ StarRating component for own review */}
-          <StarRating rating={rating} onRatingChange={setRating} />
-
-          <textarea
-            className="w-full mt-3 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600"
-            rows={3}
-            placeholder="Write your review..."
-            value={reviewText}
-            onChange={(e) => setReviewText(e.target.value)}
-          />
-          <Button
-            className="mt-3 bg-purple-600 text-white hover:bg-purple-700"
-            onClick={handleReviewSubmit}
-            disabled={!authUser || isLoading}
-          >
-            Submit Review
-          </Button>
-
-          {/* Display Other Reviews */}
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold mb-3">Customer Reviews</h3>
-            {reviews.length === 0 ? (
-              <p className="text-gray-500">No reviews yet.</p>
-            ) : (
-              <div className="space-y-4">
-                {reviews.map((review: Review) => (
-                  <div
-                    key={review._id}
-                    className="p-3 border rounded-lg shadow-sm"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        {/* ✅ Yellow static stars for other reviews */}
-                        <div className="flex gap-1">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star
-                              key={star}
-                              className={`h-5 w-5 ${
-                                star <= review.rating
-                                  ? "text-yellow-500 fill-yellow-500"
-                                  : "text-gray-300"
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <p className="text-gray-700 mt-1">{review.review}</p>
-                        <p className="text-sm text-gray-500 mt-1">
-                          By{" "}
-                          <span className="font-medium">
-                            {(review.authorId as any)?.name || "Unknown"}
-                          </span>{" "}
-                          · {format(new Date(review.createdAt), "PPP")}
-                        </p>
-                      </div>
-                      {authUser && review.authorId === authUser._id && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="text-red-500 hover:text-red-700"
-                          onClick={() => deleteReview(review._id!)}
-                        >
-                          <Trash className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+        <ReviewsSection productId={product._id!} />
       </div>
     </div>
   );

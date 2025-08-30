@@ -46,9 +46,7 @@ export default function SignupPage() {
       );
     } else {
       signup(formData as any);
-      if (authUser) {
-        navigate("/");
-      }
+      
     }
   };
 
@@ -59,6 +57,13 @@ export default function SignupPage() {
       document.body.style.overflow = "auto";
     };
   }, []);
+
+  
+  useEffect(() => {
+  if (authUser) {
+    navigate("/products");
+  }
+}, [authUser, navigate]);
 
   return (
     <div className="min-h-screen flex flex-col">
