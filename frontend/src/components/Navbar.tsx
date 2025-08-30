@@ -30,7 +30,7 @@ export default function Navbar() {
         {/* Center - All Products (always visible) */}
         <Link
           to="/products"
-          className="text-sm font-medium hover:text-purple-500 transition-colors"
+          className="text-sm font-medium hover:text-purple-500 transition-colors absolute left-1/2 -translate-x-1/2"
         >
           All Products
         </Link>

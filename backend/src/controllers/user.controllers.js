@@ -65,26 +65,46 @@ export const updateUser = async (req, res) => {
 
   return res.status(200).json(updatedUser);
 };
-
 /**
  * @swagger
- * /users/orders:
+ * /users/me:
  *   get:
- *     summary: Get all orders for the logged-in user
- *     tags: [Users]
+ *     summary: Get authenticated user details
+ *     tags: [User]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: List of orders
+ *         description: Authenticated user profile
+ *       401:
+ *         description: Unauthorized (invalid or missing token)
  *       404:
  *         description: User not found
  */
-export const getUserOrders = async (req, res) => {
-  const userId = req.user._id;
-  const user = await User.findById(userId).populate("orders");
-  if (!user) {
-    return res.status(404).json({ message: "User not found" });
+export const getUser = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const user = await User.findById(userId)
+      .populate({ path: "likes", select: "title images rating price" })
+      .populate({
+        path: "orders",
+        select: "products subtotal paymentStatus createdAt",
+        populate: {
+          path: "products.productId", 
+          select: "title images rating price SKU"
+        }
+      });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json(user); 
+  } catch (err) {
+    console.error("Error in getUser:", err);
+    return res.status(500).json({ message: "Server error" });
   }
-  return res.status(200).json(user.orders);
 };
+
+

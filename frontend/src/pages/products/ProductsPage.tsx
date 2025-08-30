@@ -63,9 +63,13 @@ export default function ProductsPage() {
 
   useEffect(() => {
     const load = async () => {
+      
       setIsLoading(true);
       await fetchProducts(1);
-      await fetchCartItems();
+      if(authUser){
+        await fetchCartItems();
+
+      }
       setIsLoading(false);
     };
     load();

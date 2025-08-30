@@ -46,7 +46,7 @@ import { generateSKU } from "../lib/skuGenerator.js";
  *         description: Paginated products list
  */
 export const getAllProducts = async (req, res) => {
-  const { page = 1, limit = 10, search, category, minPrice, maxPrice } = req.query;
+  const { page = 1, limit = 12, search, category, minPrice, maxPrice } = req.query;
 
   let filter = {};
 

@@ -1,12 +1,34 @@
 import { create } from "zustand";
-import axios from "axios";
+
+import { axiosInstance } from "@/lib/axios";
 
 interface ProductItem {
-  productId: string;
+  productId: {
+ 
+    title: string;
+    price: number;
+    images: { url: string; filename: string }[];
+    buyerId: {
+      email: string;
+      name: string;
+    }
+    sellerId: {
+      email: string;
+      name: string;
+    }
+    SKU:string
+  };
   quantity: number;
 }
 
-interface Order { /* same as before */ }
+interface Order { 
+  _id: string;
+  buyerId: string;
+  sellerId: string;
+  products: ProductItem[];
+  subtotal: number;
+  paymentStatus: string;
+ }
 
 interface OrderStore {
   orders: Order[];
@@ -19,7 +41,7 @@ interface OrderStore {
   createOrder: (sellerId: string, products: ProductItem[], subtotal: number) => Promise<Order | null>;
 }
 
-export const useOrderStore = create<OrderStore>((set) => ({
+export const useOrdersStore = create<OrderStore>((set) => ({
   orders: [], 
   selectedOrder: null,
   loading: false,
@@ -28,7 +50,7 @@ export const useOrderStore = create<OrderStore>((set) => ({
   fetchOrders: async () => {
     try {
       set({ loading: true, error: null });
-      const res = await axios.get("/orders", { withCredentials: true });
+      const res = await axiosInstance.get("/orders");
       set({ orders: Array.isArray(res.data) ? res.data : [], loading: false });
     } catch (err: any) {
       set({ error: err.response?.data?.message || "Failed to fetch orders", loading: false });
@@ -38,7 +60,7 @@ export const useOrderStore = create<OrderStore>((set) => ({
   fetchOrderById: async (orderId: string) => {
     try {
       set({ loading: true, error: null });
-      const res = await axios.get(`/orders/${orderId}`, { withCredentials: true });
+      const res = await axiosInstance.get(`/orders/${orderId}`);
       set({ selectedOrder: res.data, loading: false });
     } catch (err: any) {
       set({ error: err.response?.data?.message || "Failed to fetch order", loading: false });
@@ -48,10 +70,9 @@ export const useOrderStore = create<OrderStore>((set) => ({
   createOrder: async (sellerId: string, products: ProductItem[], subtotal: number) => {
     try {
       set({ loading: true, error: null });
-      const res = await axios.post(
-        "/orders",
-        { sellerId, products, subtotal },
-        { withCredentials: true }
+      const res = await axiosInstance.post(
+        "/orders/create",
+        { sellerId, products, subtotal }
       );
       set((state) => ({ orders: [...state.orders, res.data], loading: false }));
       return res.data;

@@ -13,6 +13,9 @@ import { useEffect } from "react";
 import { useAuthStore } from "./stores/useAuthStore";
 import CartPage from "./pages/cart/CartPage";
 import OrdersPage from "./pages/orders/OrdersPage";
+import OrderDetails from "./pages/orders/components/OrderDetails";
+import AboutPage from "./pages/about/AboutPage";
+import ProfilePage from "./pages/profile/ProfilePage";
 
 function App() {
   const {checkAuth}=useAuthStore()
@@ -31,6 +34,9 @@ function App() {
         <Route path="/products/:productId" element={<ProductDetails />} />
         <Route path="/cart" element={<CartPage/>} />
         <Route path="/orders" element={<OrdersPage/>} />
+        <Route path="orders/:orderId" element={<OrderDetails/>}/>
+        <Route path="/profile" element={<ProfilePage/>} />
+        <Route path="/about" element={<AboutPage/>} />
         <Route path="/IIT2024194/healthz" element={<div>Frontend Alive!</div>} />
       </Routes>
     </ThemeProvider>

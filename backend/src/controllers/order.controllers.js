@@ -17,6 +17,60 @@ import { Order } from "../models/order.model.js";
  *     responses:
  *       200:
  *         description: Order found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                 buyerId:
+ *                   type: object
+ *                   properties:
+ *                     name:
+ *                       type: string
+ *                     contactInfo:
+ *                       type: string
+ *                     location:
+ *                       type: string
+ *                 sellerId:
+ *                   type: object
+ *                   properties:
+ *                     name:
+ *                       type: string
+ *                     contactInfo:
+ *                       type: string
+ *                     location:
+ *                       type: string
+ *                 products:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       productId:
+ *                         type: object
+ *                         properties:
+ *                           title:
+ *                             type: string
+ *                           images:
+ *                             type: array
+ *                             items:
+ *                               type: object
+ *                               properties:
+ *                                 url:
+ *                                   type: string
+ *                                 filename:
+ *                                   type: string
+ *                           price:
+ *                             type: number
+ *                           SKU:
+ *                             type: string
+ *                       quantity:
+ *                         type: number
+ *                 subtotal:
+ *                   type: number
+ *                 paymentStatus:
+ *                   type: string
  *       404:
  *         description: Order not found
  */
@@ -24,12 +78,15 @@ export const getOrderById = async (req, res) => {
   const { orderId } = req.params;
   const user = req.user;
   let query = { _id: orderId };
+
   if (user.role === "buyer") query.buyerId = user._id;
   if (user.role === "seller") query.sellerId = user._id;
+
   const order = await Order.findOne(query)
-    .populate("buyerId", "name email")
-    .populate("sellerId", "name email")
-    .populate({ path: "products.productId", select: "title images price" });
+    .populate("buyerId", "name contactInfo location")
+    .populate("sellerId", "name contactInfo location")
+    .populate({ path: "products.productId", select: "title images price SKU" });
+
   if (!order) return res.status(404).json({ message: "Order not found" });
   res.status(200).json(order);
 };
@@ -101,11 +158,14 @@ export const createOrder = async (req, res) => {
   const buyerId = req.user._id;
   if (req.user.role !== "buyer")
     return res.status(403).json({ message: "Only buyers can create orders" });
+
   const newOrder = new Order({ buyerId, sellerId, products, subtotal });
   await newOrder.save();
+
   const order = await Order.findById(newOrder._id)
     .populate("buyerId", "name email")
     .populate("sellerId", "name email")
     .populate({ path: "products.productId", select: "title images price" });
+
   res.status(201).json(order);
 };

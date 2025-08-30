@@ -11,7 +11,7 @@ import productRoutes from "./routes/product.routes.js";
 import cartRoutes from "./routes/cart.routes.js";
 import reviewRoutes from "./routes/review.routes.js";
 import logCheckRoutes from "./routes/checklogs.routes.js";
-
+import orderRoutes from "./routes/order.routes.js";
 import { logRequests } from "./middlewares/requestlogs.middleware.js";
 import { swaggerSpec } from "./swagger.js";
 import swaggerUi from "swagger-ui-express";
@@ -32,11 +32,11 @@ app.use(logRequests);
 
 app.use("/api",logCheckRoutes)
 app.use("/api/auth",authRoutes);
-app.use("/api/user",userRoutes);
+app.use("/api/users",userRoutes);
 app.use("/api/products",productRoutes);
 app.use("/api/cart",cartRoutes);
 app.use("/api/reviews",reviewRoutes);
-
+app.use("/api/orders",orderRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
