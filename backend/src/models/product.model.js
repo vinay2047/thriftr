@@ -37,6 +37,10 @@ const productSchema=new mongoose.Schema({
         type: Number,
         default: 0,
     },
+    likeCount:{
+        type: Number,
+        default: 0
+    },
     sellerId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",

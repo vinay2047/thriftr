@@ -24,6 +24,7 @@ export interface Product {
   images: { url: string; filename: string }[];
   averageRating: number;
   reviewCount: number;
+  likeCount: number;
   sellerId: string;
   createdAt: string;
   updatedAt: string;

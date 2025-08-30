@@ -25,7 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Filter } from "lucide-react";
+import { Filter, Heart } from "lucide-react";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useCartStore } from "@/stores/useCartStore";
 import { toast } from "sonner";
@@ -38,6 +38,9 @@ export default function ProductsPage() {
     fetchProducts,
     setFilters,
     filters,
+    likedProducts,
+    toggleLike,
+    fetchUserLikes,
   } = useProductsStore();
 
   const { authUser } = useAuthStore();
@@ -63,17 +66,16 @@ export default function ProductsPage() {
 
   useEffect(() => {
     const load = async () => {
-      
       setIsLoading(true);
       await fetchProducts(1);
-      if(authUser){
+      if (authUser) {
         await fetchCartItems();
-
+        await fetchUserLikes();
       }
       setIsLoading(false);
     };
     load();
-  }, [fetchProducts, fetchCartItems]);
+  }, [fetchProducts, fetchCartItems, authUser]);
 
   const handleApplyFilters = async () => {
     setFilters({
@@ -95,7 +97,6 @@ export default function ProductsPage() {
       return;
     }
 
-    // optimistic UI
     const existing = cartItems.find((item) => item._id === productId);
     if (existing) {
       updateProductQuantity(productId, existing.quantity + 1);
@@ -121,6 +122,8 @@ export default function ProductsPage() {
   ) => {
     updateProductQuantity(productId, quantity + 1);
   };
+
+  const isLiked = (productId: string) => likedProducts.includes(productId);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -251,9 +254,37 @@ export default function ProductsPage() {
                       className="w-full h-40 object-cover rounded mb-2"
                     />
                   )}
-                  <p className="text-gray-700">${product.price}</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-gray-700">${product.price.toFixed(2)}</p>
+                    <div className="flex flex-col items-center ml-2 mt-3">
+                      <Heart
+                        className={`h-5 w-5 cursor-pointer ${
+                          isLiked(product._id)
+                            ? "fill-red-500 text-red-500"
+                            : "text-gray-400"
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!authUser) {
+                            navigate("/login");
+                            toast.error("Please login to like products");
+                            return;
+                          }
+                          toggleLike(product._id);
+                          if (isLiked(product._id)) {
+                            product.likeCount = (product.likeCount || 0) - 1;
+                          } else {
+                            product.likeCount = (product.likeCount || 0) + 1;
+                          }
+                        }}
+                      />
+                      <span className="text-[10px] text-gray-400">
+                        {product.likeCount || 0}
+                      </span>
+                    </div>
+                  </div>
                   <p className="text-sm text-gray-500">{product.category}</p>
-                  <div className="flex-1" /> {/* pushes button to bottom */}
+                  <div className="flex-1" />
                   {cartItem ? (
                     <div className="flex items-center justify-center gap-2 mt-3">
                       <Button

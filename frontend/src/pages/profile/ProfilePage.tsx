@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useUserStore } from "@/stores/useUserStore";
 import Navbar from "@/components/Navbar";
+import { useNavigate } from "react-router-dom";
 
 export default function ProfilePage() {
   const { user, fetchUser, updateUser } = useUserStore();
@@ -29,6 +30,7 @@ export default function ProfilePage() {
     country: "",
   });
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     setLoading(true);
@@ -45,7 +47,6 @@ export default function ProfilePage() {
   if (loading)
     return (
       <div className="max-w-5xl mx-auto space-y-6 p-6">
-     
         <Card className="animate-pulse">
           <CardHeader className="flex flex-col items-center space-y-2">
             <div className="h-24 w-24 rounded-full bg-gray-300"></div>
@@ -63,15 +64,13 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 p-6">
-         <div className="mb-20">
-            <Navbar />
-        </div>
+      <div className="mb-20">
+        <Navbar />
+      </div>
       <Card>
         <CardHeader className="flex flex-col items-center">
           <Avatar className="h-24 w-24">
-            <AvatarImage
-              
-            />
+            <AvatarImage />
             <AvatarFallback>{user?.name?.[0] || "U"}</AvatarFallback>
           </Avatar>
           <div className="mt-4 text-center">
@@ -155,6 +154,8 @@ export default function ProfilePage() {
               </form>
             </DialogContent>
           </Dialog>
+
+          
         </CardContent>
       </Card>
 
@@ -170,20 +171,26 @@ export default function ProfilePage() {
             </TabsTrigger>
           </TabsList>
         </div>
-
         <TabsContent value="likes" className="space-y-4 mt-4">
           {user.likes.length > 0 ? (
             user.likes.map((product) => (
-              <Card key={product._id} className="flex items-center gap-4 p-4">
-                <img
-                  src={product.images?.[0]}
-                  alt={product.title}
-                  className="h-20 w-20 object-cover rounded-xl"
-                />
-                <div>
-                  <h3 className="font-semibold">{product.title}</h3>
-                  <p className="text-sm text-gray-500">Rating: {product.rating}</p>
-                </div>
+              <Card
+                key={product._id}
+                className="hover:shadow-lg transition-shadow cursor-pointer"
+                onClick={() => navigate(`/products/${product._id}`)} // ⬅️ navigate on click
+              >
+                <CardContent className="flex items-center gap-4">
+                  {product.images?.[0]?.url && (
+                    <img
+                      src={product.images[0].url}
+                      alt={product.title}
+                      className="w-16 h-16 object-cover rounded"
+                    />
+                  )}
+                  <div className="flex-1">
+                    <h3 className="text-lg font-medium">{product.title}</h3>
+                  </div>
+                </CardContent>
               </Card>
             ))
           ) : (

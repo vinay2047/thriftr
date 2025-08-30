@@ -1,4 +1,5 @@
 import { Product } from "../models/product.model.js";
+import { User } from "../models/user.model.js";
 import { v2 as cloudinary } from "cloudinary";
 import { generateSKU } from "../lib/skuGenerator.js";
 /**
@@ -255,4 +256,92 @@ export const deleteProduct = async (req, res) => {
   }
   await Product.findByIdAndDelete(productId);
   res.status(200).json({ message: "Product deleted successfully" });
+};
+
+
+/**
+ * @swagger
+ * /products/{productId}/like:
+ *   patch:
+ *     summary: Toggle like for a product (like or unlike)
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the product to like or unlike
+ *     responses:
+ *       200:
+ *         description: Product liked or unliked successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Status message
+ *                   example: "Product liked"  # or "Product unliked"
+ *                 product:
+ *                   $ref: '#/components/schemas/Product'
+ *       404:
+ *         description: Product not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Product not found"
+ *       401:
+ *         description: Unauthorized, user not logged in
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Unauthorized"
+ */
+
+export const toggleLike = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const userId = req.user._id;
+
+    const user = await User.findById(userId);
+    let product = await Product.findById(productId);
+
+    if (!product) return res.status(404).json({ message: "Product not found" });
+
+    let message;
+
+    if (user.likes.includes(product._id)) {
+      await user.updateOne({ $pull: { likes: product._id } });
+      await product.updateOne({ $inc: { likeCount: -1 } });
+      message = "Product unliked";
+    } else {
+      await user.updateOne({ $push: { likes: product._id } });
+      await product.updateOne({ $inc: { likeCount: 1 } });
+      message = "Product liked";
+    }
+
+    // refetch updated product
+    product = await Product.findById(productId);
+
+    // check if user still likes it (after update)
+    const updatedUser = await User.findById(userId);
+    const isLiked = updatedUser.likes.includes(product._id);
+
+    res.status(200).json({ message, product, isLiked });
+  } catch (err) {
+    console.error("Toggle like error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
 };
