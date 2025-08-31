@@ -36,6 +36,7 @@ export interface ProductFilters {
   minPrice: string | number;
   maxPrice: string | number;
   limit: number;
+  sort:string;
 }
 
 export interface ProductsResponse {

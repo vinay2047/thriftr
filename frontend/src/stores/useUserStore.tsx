@@ -43,11 +43,11 @@ interface UserStore {
   user: User | null;
   fetchUser: () => Promise<void>;
   updateUser: (contactInfo: ContactInfo, location: Location) => Promise<void>;
+  
 }
 
 export const useUserStore = create<UserStore>((set) => ({
   user: null,
-
   fetchUser: async () => {
     try {
       const res = await axiosInstance.get("/users/me");
@@ -69,4 +69,6 @@ export const useUserStore = create<UserStore>((set) => ({
       console.error("Failed to update user", err);
     }
   },
+
+  
 }));

@@ -8,7 +8,7 @@ router.get("/",getAllProducts);
 router.get("/:productId",getProductById);
 router.post("/create",protectRoute,isSeller,upload.array("images",3),createProduct);
 router.post("/like/:productId",protectRoute,toggleLike);
-router.put("/update/:productId",protectRoute,isSeller,upload.array("images",3),updateProduct);
+router.put("/update/:productId",protectRoute,isSeller,updateProduct);
 router.delete("/:productId",protectRoute,isSeller,deleteProduct);
 
 export default router;

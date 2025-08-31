@@ -75,7 +75,7 @@ export default function ProductDetails() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -119,16 +119,17 @@ export default function ProductDetails() {
 
         {/* Average Rating */}
         <div className="flex items-center gap-2 mb-2">
-          <span className="flex items-center gap-1  text-yellow-400 font-medium">
+          <span className="flex items-center gap-1 text-yellow-400 font-medium">
             {product.averageRating?.toFixed(1)} <Star className="h-4 w-4" />
           </span>
           <span className="text-gray-500 text-sm">
-            Rated by {product.reviewCount || 0} {product.reviewCount === 1 ? "person" : "people"}
+            Rated by {product.reviewCount || 0}{" "}
+            {product.reviewCount === 1 ? "person" : "people"}
           </span>
         </div>
 
         <div className="flex items-center space-x-6 mb-2">
-          <span className="text-2xl font-semibold text-purple-600">
+          <span className="text-2xl font-semibold text-primary">
             ₹{product.price}
           </span>
         </div>
@@ -159,7 +160,7 @@ export default function ProductDetails() {
             </div>
           ) : (
             <Button
-              className="flex items-center gap-2 bg-purple-600 text-white hover:bg-purple-700"
+              className="flex items-center gap-2 bg-primary text-white hover:bg-primary/90"
               onClick={() => handleAddToCart(product._id!)}
             >
               <ShoppingCart className="h-4 w-4" />
@@ -168,7 +169,7 @@ export default function ProductDetails() {
           )}
           <Button
             variant="outline"
-            className="flex items-center gap-2 border-purple-600 text-purple-600 hover:bg-purple-50"
+            className="flex items-center gap-2 border-primary text-primary hover:bg-primary/10"
           >
             <CreditCard className="h-4 w-4" />
             Buy Now

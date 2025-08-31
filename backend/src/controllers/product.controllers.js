@@ -47,7 +47,15 @@ import { generateSKU } from "../lib/skuGenerator.js";
  *         description: Paginated products list
  */
 export const getAllProducts = async (req, res) => {
-  const { page = 1, limit = 12, search, category, minPrice, maxPrice } = req.query;
+  const {
+    page = 1,
+    limit = 12,
+    search,
+    category,
+    minPrice,
+    maxPrice,
+    sort,
+  } = req.query;
 
   let filter = {};
 
@@ -68,7 +76,28 @@ export const getAllProducts = async (req, res) => {
     if (maxPrice) filter.price.$lte = Number(maxPrice);
   }
 
+  // sorting logic
+  let sortOption = {};
+  switch (sort) {
+    case "price-low-high":
+      sortOption.price = 1;
+      break;
+    case "price-high-low":
+      sortOption.price = -1;
+      break;
+    case "popular":
+      sortOption.likeCount = -1;
+      break;
+    case "newest":
+      sortOption.createdAt = -1;
+      break;
+    default:
+      sortOption.createdAt = -1; // default to newest
+      break;
+  }
+
   const products = await Product.find(filter)
+    .sort(sortOption)
     .skip((page - 1) * limit)
     .limit(Number(limit));
 
@@ -81,6 +110,7 @@ export const getAllProducts = async (req, res) => {
     totalProducts: total,
   });
 };
+
 
 /**
  * @swagger
@@ -102,8 +132,10 @@ export const getAllProducts = async (req, res) => {
  */
 export const getProductById = async (req, res) => {
   const { productId } = req.params;
-  const product = await Product.findById(productId).populate({path: "sellerId",
-    select: "-password -__v"})
+  const product = await Product.findById(productId).populate({
+    path: "sellerId",
+    select: "name contactInfo location",
+  });
   res.status(200).json(product);
 };
 
@@ -155,23 +187,25 @@ export const getProductById = async (req, res) => {
  *                   $ref: '#/components/schemas/Product'
  */
 export const createProduct = async (req, res) => {
-  const { title, description, price, category } = req.body
+  const { title, description, price, category } = req.body;
   const newProduct = new Product({
     title,
     description,
     price,
     category,
     sellerId: req.user._id,
-    images: req.files ? req.files.map(f => ({ url: f.path, filename: f.filename })) : []
-  })
+    images: req.files
+      ? req.files.map((f) => ({ url: f.path, filename: f.filename }))
+      : [],
+  });
 
- 
-  newProduct.SKU = generateSKU(newProduct._id.toString())
+  newProduct.SKU = generateSKU(newProduct._id.toString());
 
-  await newProduct.save()
-  res.status(201).json({ message: "Product created successfully", product: newProduct })
-}
-
+  await newProduct.save();
+  res
+    .status(201)
+    .json({ message: "Product created successfully", product: newProduct });
+};
 
 /**
  * @swagger
@@ -196,30 +230,36 @@ export const createProduct = async (req, res) => {
  *         description: Product not found
  */
 export const updateProduct = async (req, res) => {
-  const { productId } = req.params;
-  const userId = req.user._id;
-  const { price, category } = req.body;
-  const product = await Product.findById(productId);
-  if (!product) return res.status(404).json({ message: "Product not found" });
-  if (product.sellerId.toString() !== userId.toString()) return res.status(403).json({ message: "Not authorized" });
+  try {
+    const { productId } = req.params;
+    const userId = req.user._id;
+    const { title, description, price, category } = req.body;
 
-  if (req.files && req.files.length > 0) {
-    const imgs = req.files.map(f => ({ url: f.path, filename: f.filename }));
-    product.images.push(...imgs);
-  }
-
-  if (req.body.deleteImages) {
-    for (let filename of req.body.deleteImages) {
-      await cloudinary.uploader.destroy(filename);
+    const product = await Product.findById(productId);
+    if (!product) return res.status(404).json({ message: "Product not found" });
+    if (product.sellerId.toString() !== userId.toString()) {
+      return res.status(403).json({ message: "Not authorized" });
     }
-    await product.updateOne({ $pull: { images: { filename: { $in: req.body.deleteImages } } } });
+
+    if (!title || !description || !price || !category) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    product.title = title;
+    product.description = description;
+    product.price = price;
+    product.category = category;
+
+    await product.save();
+
+    res.status(200).json({
+      message: "Product updated successfully",
+      product,
+    });
+  } catch (error) {
+    console.error("Update product error:", error);
+    res.status(500).json({ message: "Server error" });
   }
-
-  if (price) product.price = price;
-  if (category) product.category = category;
-  await product.save();
-
-  res.status(200).json({ message: "Product updated successfully", product });
 };
 
 /**
@@ -249,7 +289,8 @@ export const deleteProduct = async (req, res) => {
   const userId = req.user._id;
   const product = await Product.findById(productId);
   if (!product) return res.status(404).json({ message: "Product not found" });
-  if (product.sellerId.toString() !== userId.toString()) return res.status(403).json({ message: "Not authorized" });
+  if (product.sellerId.toString() !== userId.toString())
+    return res.status(403).json({ message: "Not authorized" });
 
   for (let img of product.images) {
     await cloudinary.uploader.destroy(img.filename);
@@ -257,7 +298,6 @@ export const deleteProduct = async (req, res) => {
   await Product.findByIdAndDelete(productId);
   res.status(200).json({ message: "Product deleted successfully" });
 };
-
 
 /**
  * @swagger

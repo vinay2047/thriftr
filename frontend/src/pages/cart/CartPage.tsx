@@ -1,5 +1,3 @@
-
-
 import { useEffect, useMemo } from "react";
 import { useCartStore } from "@/stores/useCartStore";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -157,7 +155,8 @@ export default function CartPage() {
             <span>₹{subtotal + platformFee}</span>
           </div>
           <Button
-            className="w-full mt-4 bg-purple-500 text-white hover:bg-purple-600"
+            variant="default"
+            className="w-full mt-4 bg-primary text-white hover:bg-primary/90"
             onClick={() => navigate("/checkout")}
           >
             Checkout

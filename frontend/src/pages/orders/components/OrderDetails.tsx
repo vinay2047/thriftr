@@ -50,7 +50,6 @@ export default function OrderDetailsPage() {
   const isBuyer = authUser?.role === "buyer";
   const otherParty = isBuyer ? sellerId : buyerId;
 
-  // Badge variant based on paymentStatus
   const getBadgeVariant = (status: string) => {
     switch (status.toLowerCase()) {
       case "completed":
@@ -66,15 +65,13 @@ export default function OrderDetailsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Navbar with margin bottom */}
       <div className="mb-20">
         <Navbar />
       </div>
 
       <div className="max-w-5xl mx-auto px-4 space-y-6">
-        <h1 className="text-2xl font-bold text-purple-400">Order Details</h1>
+        <h1 className="text-2xl font-bold text-primary">Order Details</h1>
 
-        {/* Order summary */}
         <Card>
           <CardHeader>
             <CardTitle className="flex justify-between items-center">
@@ -85,19 +82,15 @@ export default function OrderDetailsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Products */}
             <div className="space-y-4">
               {products.map((item, idx) => (
                 <Card key={idx} className="p-4">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-6">
-                    {/* Product image */}
                     <img
                       src={item.productId.images?.[0]?.url}
                       alt={item.productId.title}
                       className="h-40 w-40 rounded-xl object-cover shrink-0"
                     />
-
-                    {/* Product details */}
                     <div className="flex flex-col justify-center space-y-2 flex-1">
                       <h2 className="font-semibold text-xl">
                         {item.productId.title}
@@ -108,7 +101,7 @@ export default function OrderDetailsPage() {
                       <p className="text-base text-gray-400">
                         Quantity: {item.quantity}
                       </p>
-                      <p className="font-medium text-lg text-purple-400">
+                      <p className="font-medium text-lg text-primary">
                         Subtotal: ₹{item.productId.price * item.quantity}
                       </p>
                     </div>
@@ -116,23 +109,22 @@ export default function OrderDetailsPage() {
                 </Card>
               ))}
             </div>
-            {/* Order totals */}
+
             <div className="flex justify-between text-lg font-semibold border-t pt-4">
               <span>Subtotal</span>
-              <span>₹{subtotal}</span>
+              <span className="text-primary">₹{subtotal}</span>
             </div>
             <div className="flex justify-between text-lg font-semibold">
               <span>Platform Fee </span>
-              <span>₹{platformFee}</span>
+              <span className="text-primary">₹{platformFee}</span>
             </div>
             <div className="flex justify-between text-lg font-semibold">
               <span>Total</span>
-              <span className="text-purple-400">₹{total}</span>
+              <span className="text-primary">₹{total}</span>
             </div>
           </CardContent>
         </Card>
 
-        {/* Other party details */}
         <Card>
           <CardHeader>
             <CardTitle>

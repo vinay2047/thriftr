@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X, ShoppingCart, User } from "lucide-react";
+import { Menu, X, ShoppingCart, User, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useCartStore } from "@/stores/useCartStore";
@@ -30,7 +30,7 @@ export default function Navbar() {
         {/* Center - All Products (always visible) */}
         <Link
           to="/products"
-          className="text-sm font-medium hover:text-purple-500 transition-colors absolute left-1/2 -translate-x-1/2"
+          className="text-sm font-medium hover:text-primary transition-colors absolute left-1/2 -translate-x-1/2"
         >
           All Products
         </Link>
@@ -69,7 +69,7 @@ export default function Navbar() {
                   >
                     <ShoppingCart className="h-5 w-5" />
                     {cartItems.length > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-purple-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                      <span className="absolute -top-1 -right-1 bg-primary text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
                         {cartItems.length}
                       </span>
                     )}
@@ -91,7 +91,8 @@ export default function Navbar() {
                 <Button
                   onClick={handleLogout}
                   size="sm"
-                  className="bg-purple-500 text-white hover:bg-purple-600 transition-colors"
+                  variant="default"
+                  className="text-white transition-colors"
                 >
                   Logout
                 </Button>
@@ -156,6 +157,17 @@ export default function Navbar() {
                 </Button>
               </Link>
 
+              {/* Your Orders */}
+              <Link to="/orders" onClick={() => setIsOpen(false)}>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start flex items-center gap-2"
+                >
+                  <ClipboardList className="h-4 w-4" />
+                  Your Orders
+                </Button>
+              </Link>
+
               {/* Profile */}
               <Link to="/profile" onClick={() => setIsOpen(false)}>
                 <Button
@@ -173,7 +185,8 @@ export default function Navbar() {
                   handleLogout();
                   setIsOpen(false);
                 }}
-                className="w-full bg-purple-500 text-white hover:bg-purple-600"
+                size={"xs"}
+                className="w-full text-white"
               >
                 Logout
               </Button>

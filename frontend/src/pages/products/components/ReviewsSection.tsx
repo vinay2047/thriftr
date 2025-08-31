@@ -37,14 +37,14 @@ export default function ReviewsSection({ productId }: Props) {
       <StarRating rating={rating} onChange={setRating} />
 
       <textarea
-        className="w-full mt-3 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600"
+        className="w-full mt-3 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
         rows={3}
         placeholder="Write your review..."
         value={reviewText}
         onChange={(e) => setReviewText(e.target.value)}
       />
       <Button
-        className="mt-3 bg-purple-600 text-white hover:bg-purple-700"
+        className="mt-3 bg-primary text-white hover:bg-primary/90"
         onClick={handleReviewSubmit}
         disabled={!authUser || isLoading}
       >
@@ -85,16 +85,18 @@ export default function ReviewsSection({ productId }: Props) {
                       · {format(new Date(review.createdAt), "PPP")}
                     </p>
                   </div>
-                  {authUser &&  (typeof review.authorId !== "string" && review.authorId._id === authUser._id) && (
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="text-red-500 hover:text-red-700"
-                      onClick={() => deleteReview(review._id!)}
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  )}
+                  {authUser &&
+                    (typeof review.authorId !== "string" &&
+                      review.authorId._id === authUser._id) && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="text-red-500 hover:text-red-700"
+                        onClick={() => deleteReview(review._id!)}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    )}
                 </div>
               </div>
             ))}

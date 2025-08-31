@@ -154,16 +154,13 @@ export const getAllOrders = async (req, res) => {
  *         description: Only buyers can create
  */
 export const createOrder = async (req, res) => {
-  const { sellerId, products, subtotal } = req.body;
+  const { sellerId, products, subtotal,paymentStatus } = req.body;
   const buyerId = req.user._id;
-  if (req.user.role !== "buyer")
-    return res.status(403).json({ message: "Only buyers can create orders" });
 
-  const newOrder = new Order({ buyerId, sellerId, products, subtotal });
+  const newOrder = new Order({ buyerId, sellerId, products, subtotal,paymentStatus });
   await newOrder.save();
 
   const order = await Order.findById(newOrder._id)
-    .populate("buyerId", "name email")
     .populate("sellerId", "name email")
     .populate({ path: "products.productId", select: "title images price" });
 

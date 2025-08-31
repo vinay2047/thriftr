@@ -38,7 +38,7 @@ interface OrderStore {
 
   fetchOrders: () => Promise<void>;
   fetchOrderById: (orderId: string) => Promise<void>;
-  createOrder: (sellerId: string, products: ProductItem[], subtotal: number) => Promise<Order | null>;
+  createOrder: (sellerId: string, products: ProductItem[], subtotal: number,paymentStatus: string) => Promise<Order | null>;
 }
 
 export const useOrdersStore = create<OrderStore>((set) => ({
@@ -67,12 +67,12 @@ export const useOrdersStore = create<OrderStore>((set) => ({
     }
   },
 
-  createOrder: async (sellerId: string, products: ProductItem[], subtotal: number) => {
+  createOrder: async (sellerId: string, products: ProductItem[], subtotal: number,paymentStatus: string) => {
     try {
       set({ loading: true, error: null });
       const res = await axiosInstance.post(
         "/orders/create",
-        { sellerId, products, subtotal }
+        { sellerId, products, subtotal,paymentStatus }
       );
       set((state) => ({ orders: [...state.orders, res.data], loading: false }));
       return res.data;

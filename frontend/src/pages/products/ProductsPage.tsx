@@ -77,18 +77,28 @@ export default function ProductsPage() {
     load();
   }, [fetchProducts, fetchCartItems, authUser]);
 
-  const handleApplyFilters = async () => {
-    setFilters({
-      search,
-      category: category === "all" ? "" : category,
-      minPrice: priceRange[0],
-      maxPrice: priceRange[1],
-    });
-    setIsLoading(true);
-    await fetchProducts(1);
-    setIsLoading(false);
-    setOpenFilters(false);
-  };
+   useEffect(() => {
+    const timeout = setTimeout(() => {
+      setFilters({ search });
+      fetchProducts(1);
+    }, 300); 
+
+    return () => clearTimeout(timeout);
+  }, [search, setFilters, fetchProducts]);
+
+ const handleApplyFilters = async () => {
+  setFilters({
+    search,
+    category: category === "all" ? "" : category,
+    minPrice: priceRange[0],
+    maxPrice: priceRange[1],
+    sort, 
+  });
+  setIsLoading(true);
+  await fetchProducts(1);
+  setIsLoading(false);
+  setOpenFilters(false);
+};
 
   const handleAddToCart = async (productId: string) => {
     if (!authUser) {
