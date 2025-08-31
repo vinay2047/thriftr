@@ -22,7 +22,7 @@ const OrdersPage = () => {
 
   return (
     <div>
-      {/* Navbar always visible */}
+      
       <div className="mb-20">
         <Navbar />
       </div>

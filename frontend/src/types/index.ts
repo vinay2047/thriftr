@@ -65,6 +65,7 @@ export interface CartItem extends Product {
 }
 
 export type OrderProductInput = {
-  productId: string;
+  productId: string|Product;
   quantity: number;
 };
+

@@ -6,6 +6,6 @@ const router = Router();
 
 router.get("/",protectRoute,getAllOrders);
 router.get("/:orderId",protectRoute,getOrderById);
-router.post("/checkout",protectRoute,checkoutLimitercreateOrder);
+router.post("/checkout",protectRoute,checkoutLimiter,createOrder);
 
 export default router;

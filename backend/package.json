@@ -7,7 +7,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon ./src/app.js",
-    "seed:users": "nodemon ./src/seeds/seedUsers.js"
+    "seed:users": "nodemon ./src/seeds/seedUsers.js",
+    "start": "node ./src/app.js"
   },
   "keywords": [],
   "author": "",
@@ -21,10 +22,12 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
+    "express-rate-limit": "^8.0.1",
     "form-data": "^4.0.4",
     "mongoose": "^8.18.0",
     "multer": "^2.0.2",
     "multer-storage-cloudinary": "^4.0.0",
+    "node-cache": "^5.1.2",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "tough-cookie": "^5.1.2"

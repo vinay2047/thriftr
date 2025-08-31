@@ -40,7 +40,7 @@ interface Order {
       country?: string;
     };
   };
-  sellerIds: string[]; // kept for reference
+  sellerIds: string[]; 
   products: OrderProductInput[];
   subtotal: number;
   paymentStatus: string;

@@ -15,9 +15,11 @@ import orderRoutes from "./routes/order.routes.js";
 import { logRequests } from "./middlewares/requestlogs.middleware.js";
 import { swaggerSpec } from "./swagger.js";
 import swaggerUi from "swagger-ui-express";
+import path from "path";
 
 const app=express();
 const port=process.env.PORT|| 3000;
+const __dirname = path.resolve();
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use(cors({
@@ -37,6 +39,16 @@ app.use("/api/products",productRoutes);
 app.use("/api/cart",cartRoutes);
 app.use("/api/reviews",reviewRoutes);
 app.use("/api/orders",orderRoutes);
+
+
+if (process.env.NODE_ENV === "production") {
+  const frontendPath = path.join(__dirname, "../frontend/dist");
+  app.use(express.static(frontendPath));
+
+  app.get(/(.*)/, (req, res) => {
+    res.sendFile(path.join(frontendPath, "index.html"));
+  });
+}
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
