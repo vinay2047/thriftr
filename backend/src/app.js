@@ -23,7 +23,7 @@ const __dirname = path.resolve();
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use(cors({
-    origin:"http://localhost:5173",
+    origin:"https://thriftr.onrender.com",
     credentials:true
 }))
 
