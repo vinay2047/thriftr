@@ -2,61 +2,44 @@ import { Product } from "../models/product.model.js";
 import { User } from "../models/user.model.js";
 import { v2 as cloudinary } from "cloudinary";
 import { generateSKU } from "../lib/skuGenerator.js";
+
 /**
  * @swagger
  * /products:
  *   get:
- *     summary: Get all products (paginated, with filters)
+ *     summary: Get all products (with filters & pagination)
  *     tags: [Products]
  *     parameters:
  *       - in: query
  *         name: page
  *         schema:
  *           type: integer
- *           default: 1
- *         description: Page number
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
- *           default: 10
- *         description: Number of products per page
  *       - in: query
  *         name: search
  *         schema:
  *           type: string
- *         description: Search by product title or description
  *       - in: query
  *         name: category
  *         schema:
  *           type: string
- *           enum: [Electronics, Clothing, Books, Home, Furniture, Sports, Toys, Health, Beauty, Grocery, Jewelry, Automotive, Other]
- *         description: Filter by category
  *       - in: query
  *         name: minPrice
  *         schema:
  *           type: number
- *         description: Minimum price
  *       - in: query
  *         name: maxPrice
  *         schema:
  *           type: number
- *         description: Maximum price
  *     responses:
  *       200:
- *         description: Paginated products list
+ *         description: Paginated list of products
  */
 export const getAllProducts = async (req, res) => {
-  const {
-    page = 1,
-    limit = 12,
-    search,
-    category,
-    minPrice,
-    maxPrice,
-    sort,
-  } = req.query;
-
+  const { page = 1, limit = 12, search, category, minPrice, maxPrice, sort } = req.query;
   let filter = {};
 
   if (search) {
@@ -65,35 +48,19 @@ export const getAllProducts = async (req, res) => {
       { description: { $regex: search, $options: "i" } },
     ];
   }
-
-  if (category) {
-    filter.category = category;
-  }
-
+  if (category) filter.category = category;
   if (minPrice || maxPrice) {
     filter.price = {};
     if (minPrice) filter.price.$gte = Number(minPrice);
     if (maxPrice) filter.price.$lte = Number(maxPrice);
   }
 
-  // sorting logic
   let sortOption = {};
   switch (sort) {
-    case "price-low-high":
-      sortOption.price = 1;
-      break;
-    case "price-high-low":
-      sortOption.price = -1;
-      break;
-    case "popular":
-      sortOption.likeCount = -1;
-      break;
-    case "newest":
-      sortOption.createdAt = -1;
-      break;
-    default:
-      sortOption.createdAt = -1; // default to newest
-      break;
+    case "price-low-high": sortOption.price = 1; break;
+    case "price-high-low": sortOption.price = -1; break;
+    case "popular": sortOption.likeCount = -1; break;
+    default: sortOption.createdAt = -1; break;
   }
 
   const products = await Product.find(filter)
@@ -110,7 +77,6 @@ export const getAllProducts = async (req, res) => {
     totalProducts: total,
   });
 };
-
 
 /**
  * @swagger
@@ -147,44 +113,9 @@ export const getProductById = async (req, res) => {
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             required:
- *               - title
- *               - description
- *               - price
- *               - category
- *             properties:
- *               title:
- *                 type: string
- *               description:
- *                 type: string
- *               price:
- *                 type: number
- *               category:
- *                 type: string
- *                 enum: [Electronics, Clothing, Books, Home, Furniture, Sports, Toys, Health, Beauty, Grocery, Jewelry, Automotive, Other]
- *               images:
- *                 type: array
- *                 items:
- *                   type: string
- *                   format: binary
  *     responses:
  *       201:
  *         description: Product created
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 product:
- *                   $ref: '#/components/schemas/Product'
  */
 export const createProduct = async (req, res) => {
   const { title, description, price, category } = req.body;
@@ -194,17 +125,11 @@ export const createProduct = async (req, res) => {
     price,
     category,
     sellerId: req.user._id,
-    images: req.files
-      ? req.files.map((f) => ({ url: f.path, filename: f.filename }))
-      : [],
+    images: req.files ? req.files.map(f => ({ url: f.path, filename: f.filename })) : [],
   });
-
   newProduct.SKU = generateSKU(newProduct._id.toString());
-
   await newProduct.save();
-  res
-    .status(201)
-    .json({ message: "Product created successfully", product: newProduct });
+  res.status(201).json({ message: "Product created successfully", product: newProduct });
 };
 
 /**
@@ -237,27 +162,17 @@ export const updateProduct = async (req, res) => {
 
     const product = await Product.findById(productId);
     if (!product) return res.status(404).json({ message: "Product not found" });
-    if (product.sellerId.toString() !== userId.toString()) {
+    if (product.sellerId.toString() !== userId.toString())
       return res.status(403).json({ message: "Not authorized" });
-    }
-
-    if (!title || !description || !price || !category) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
 
     product.title = title;
     product.description = description;
     product.price = price;
     product.category = category;
-
     await product.save();
 
-    res.status(200).json({
-      message: "Product updated successfully",
-      product,
-    });
+    res.status(200).json({ message: "Product updated successfully", product });
   } catch (error) {
-    console.error("Update product error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -303,7 +218,7 @@ export const deleteProduct = async (req, res) => {
  * @swagger
  * /products/{productId}/like:
  *   patch:
- *     summary: Toggle like for a product (like or unlike)
+ *     summary: Toggle like on a product
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
@@ -313,43 +228,12 @@ export const deleteProduct = async (req, res) => {
  *         required: true
  *         schema:
  *           type: string
- *         description: ID of the product to like or unlike
  *     responses:
  *       200:
- *         description: Product liked or unliked successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Status message
- *                   example: "Product liked"  # or "Product unliked"
- *                 product:
- *                   $ref: '#/components/schemas/Product'
+ *         description: Product liked or unliked
  *       404:
  *         description: Product not found
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Product not found"
- *       401:
- *         description: Unauthorized, user not logged in
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Unauthorized"
  */
-
 export const toggleLike = async (req, res) => {
   try {
     const { productId } = req.params;
@@ -357,11 +241,9 @@ export const toggleLike = async (req, res) => {
 
     const user = await User.findById(userId);
     let product = await Product.findById(productId);
-
     if (!product) return res.status(404).json({ message: "Product not found" });
 
     let message;
-
     if (user.likes.includes(product._id)) {
       await user.updateOne({ $pull: { likes: product._id } });
       await product.updateOne({ $inc: { likeCount: -1 } });
@@ -372,16 +254,12 @@ export const toggleLike = async (req, res) => {
       message = "Product liked";
     }
 
-    // refetch updated product
     product = await Product.findById(productId);
-
-    // check if user still likes it (after update)
     const updatedUser = await User.findById(userId);
     const isLiked = updatedUser.likes.includes(product._id);
 
     res.status(200).json({ message, product, isLiked });
   } catch (err) {
-    console.error("Toggle like error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };

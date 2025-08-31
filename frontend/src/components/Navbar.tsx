@@ -10,6 +10,7 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { authUser, logout } = useAuthStore();
   const { cartItems, fetchCartItems } = useCartStore();
+  
 
   const handleLogout = () => {
     logout();
@@ -183,6 +184,7 @@ export default function Navbar() {
               <Button
                 onClick={() => {
                   handleLogout();
+          
                   setIsOpen(false);
                 }}
                 size={"xs"}

@@ -1,5 +1,5 @@
 import { axiosInstance } from "@/lib/axios";
-import type { Review } from "@/types";
+import type { Review, ReviewInput } from "@/types";
 import { toast } from "sonner";
 import { create } from "zustand";
 
@@ -7,7 +7,7 @@ interface ReviewStore {
   reviews: Review[];
   isLoading: boolean;
   fetchReviews: (productId: string) => void;
-  createReview: (review: Review) => void;
+  createReview: (review: ReviewInput) => void;
   deleteReview: (reviewId: string) => void;
 }
 export const useReviewStore = create<ReviewStore>((set,get) => ({
@@ -29,7 +29,7 @@ export const useReviewStore = create<ReviewStore>((set,get) => ({
       set({ isLoading: false });
     }
   },
-  createReview: async (review: Review) => {
+  createReview: async (review: ReviewInput) => {
     try {
       set({ isLoading: true });
       const response = await axiosInstance.post("/reviews", review);

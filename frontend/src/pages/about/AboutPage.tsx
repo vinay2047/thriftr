@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 
 
 function AboutPage() {
-  console.log(import.meta.env.VITE_ASSIGNMENT_SEED);
+  
   return (
     <div>
         <div className="mb-20">

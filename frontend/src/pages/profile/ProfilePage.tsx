@@ -20,27 +20,88 @@ import { useNavigate } from "react-router-dom";
 import { Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+// ---------- Types ----------
+type ContactInfo = {
+  phoneNo: string;
+  contactEmail: string;
+};
+
+type LocationInfo = {
+  city: string;
+  state: string;
+  country: string;
+};
+
+type Product = {
+  _id: string;
+  title: string;
+  description?: string;
+  images?: { url: string }[];
+};
+
+type OrderProduct = {
+  productId?: Product;
+};
+
+type Order = {
+  _id: string;
+  paymentStatus: string;
+  subtotal: number;
+  products: OrderProduct[];
+};
+
+type Listing = {
+  _id: string;
+  title: string;
+  description: string;
+  price: number;
+  category: string;
+  images?: { url: string }[];
+};
+
+type User = {
+  _id: string;
+  name: string;
+  email: string;
+  createdAt: string;
+  role: "buyer" | "seller";
+  contactInfo?: ContactInfo;
+  location?: LocationInfo;
+  likes?: Product[];
+  orders?: Order[];
+};
+
 export default function ProfilePage() {
-  const { user, fetchUser, updateUser } = useUserStore();
-  const { listings, fetchListings, deleteListing, updateListing } =
-    useProductsStore();
-  const [contactInfo, setContactInfo] = useState({
+  const { user, fetchUser, updateUser, isLoading } = useUserStore() as {
+    user: User | null;
+    fetchUser: () => Promise<void>;
+    updateUser: (c: ContactInfo, l: LocationInfo) => Promise<void>;
+    isLoading: boolean;
+  };
+
+  const { listings, fetchListings, deleteListing, updateListing } = useProductsStore() as {
+    listings: Listing[];
+    fetchListings: () => Promise<void>;
+    deleteListing: (id: string) => Promise<void>;
+    updateListing: (id: string, data: Partial<Listing>) => Promise<void>;
+  };
+
+  const [contactInfo, setContactInfo] = useState<ContactInfo>({
     phoneNo: "",
     contactEmail: "",
   });
-  const [location, setLocation] = useState({
+  const [location, setLocation] = useState<LocationInfo>({
     city: "",
     state: "",
     country: "",
   });
-  const [loading, setLoading] = useState(true);
-  const [editingListing, setEditingListing] = useState(null);
-  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [editingListing, setEditingListing] = useState<Listing | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
   const navigate = useNavigate();
 
   useEffect(() => {
-    setLoading(true);
-    fetchUser().finally(() => setLoading(false));
+    fetchUser();
   }, [fetchUser]);
 
   useEffect(() => {
@@ -56,10 +117,10 @@ export default function ProfilePage() {
   const handleUserUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     await updateUser(contactInfo, location);
-    navigate("/profile");
+    await fetchUser();
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: string) => {
     await deleteListing(id);
     fetchListings();
     setDeleteConfirmId(null);
@@ -67,29 +128,32 @@ export default function ProfilePage() {
 
   const handleUpdateListing = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (
-      !editingListing.title ||
-      !editingListing.description ||
-      !editingListing.price ||
-      !editingListing.category
+      !editingListing?.title ||
+      !editingListing?.description ||
+      !editingListing?.price ||
+      !editingListing?.category
     ) {
       toast.error("All fields are required");
       return;
     }
 
-    await updateListing(editingListing._id, {
-      title: editingListing.title,
-      description: editingListing.description,
-      price: editingListing.price,
-      category: editingListing.category,
-    });
-
-    fetchListings();
-    setEditingListing(null);
+    try {
+      await updateListing(editingListing._id, {
+        title: editingListing.title,
+        description: editingListing.description,
+        price: Number(editingListing.price),
+        category: editingListing.category,
+      });
+      fetchListings();
+      setEditingListing(null);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update listing");
+    }
   };
 
-  if (loading)
+  if (isLoading)
     return (
       <div className="max-w-5xl mx-auto space-y-6 p-6">
         <Card className="animate-pulse">
@@ -113,6 +177,7 @@ export default function ProfilePage() {
         <Navbar />
       </div>
 
+      {/* Avatar & Info */}
       <Card>
         <CardHeader className="flex flex-col items-center">
           <Avatar className="h-24 w-24">
@@ -122,9 +187,11 @@ export default function ProfilePage() {
           <div className="mt-4 text-center">
             <p className="text-lg font-semibold">{user?.name}</p>
             <p className="text-sm text-gray-500">{user?.email}</p>
-            <p className="text-sm text-gray-400">
-              Member since {format(new Date(user.createdAt), "MMMM yyyy")}
-            </p>
+            {user?.createdAt && (
+              <p className="text-sm text-gray-400">
+                Member since {format(new Date(user.createdAt), "MMMM yyyy")}
+              </p>
+            )}
           </div>
         </CardHeader>
 
@@ -137,61 +204,44 @@ export default function ProfilePage() {
               <DialogHeader>
                 <DialogTitle>Edit Info</DialogTitle>
               </DialogHeader>
-              <form
-                className="space-y-4"
-                onSubmit={(e) => {
-                  handleUserUpdate(e);
-                }}
-              >
+              <form className="space-y-4" onSubmit={handleUserUpdate}>
                 <div>
                   <Label className="mb-2 block">Phone Number</Label>
                   <Input
-                    value={contactInfo.phoneNo || ""}
+                    value={contactInfo.phoneNo}
                     onChange={(e) =>
-                      setContactInfo({
-                        ...contactInfo,
-                        phoneNo: e.target.value,
-                      })
+                      setContactInfo({ ...contactInfo, phoneNo: e.target.value })
                     }
                   />
                 </div>
                 <div>
                   <Label className="mb-2 block">Contact Email</Label>
                   <Input
-                    value={contactInfo.contactEmail || ""}
+                    value={contactInfo.contactEmail}
                     onChange={(e) =>
-                      setContactInfo({
-                        ...contactInfo,
-                        contactEmail: e.target.value,
-                      })
+                      setContactInfo({ ...contactInfo, contactEmail: e.target.value })
                     }
                   />
                 </div>
                 <div>
                   <Label className="mb-2 block">City</Label>
                   <Input
-                    value={location.city || ""}
-                    onChange={(e) =>
-                      setLocation({ ...location, city: e.target.value })
-                    }
+                    value={location.city}
+                    onChange={(e) => setLocation({ ...location, city: e.target.value })}
                   />
                 </div>
                 <div>
                   <Label className="mb-2 block">State</Label>
                   <Input
-                    value={location.state || ""}
-                    onChange={(e) =>
-                      setLocation({ ...location, state: e.target.value })
-                    }
+                    value={location.state}
+                    onChange={(e) => setLocation({ ...location, state: e.target.value })}
                   />
                 </div>
                 <div>
                   <Label className="mb-2 block">Country</Label>
                   <Input
-                    value={location.country || ""}
-                    onChange={(e) =>
-                      setLocation({ ...location, country: e.target.value })
-                    }
+                    value={location.country}
+                    onChange={(e) => setLocation({ ...location, country: e.target.value })}
                   />
                 </div>
                 <Button type="submit">Save Changes</Button>
@@ -201,6 +251,7 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
+      {/* Tabs */}
       <Tabs defaultValue="likes" className="w-full">
         <div className="flex justify-center">
           <TabsList className="inline-flex space-x-4">
@@ -220,10 +271,10 @@ export default function ProfilePage() {
 
         {/* Likes */}
         <TabsContent value="likes" className="space-y-4 mt-4">
-          {user.likes.length > 0 ? (
-            user.likes.map((product) => (
+          {user?.likes && user.likes.length > 0 ? (
+            user.likes.map((product, idx) => (
               <Card
-                key={product._id}
+                key={`${product._id}-${idx}`}
                 className="hover:shadow-lg transition-shadow cursor-pointer"
                 onClick={() => navigate(`/products/${product._id}`)}
               >
@@ -242,9 +293,7 @@ export default function ProfilePage() {
               </Card>
             ))
           ) : (
-            <Card className="p-6 text-center text-gray-500">
-              No liked products yet.
-            </Card>
+            <Card className="p-6 text-center text-gray-500">No liked products yet.</Card>
           )}
         </TabsContent>
 
@@ -253,22 +302,27 @@ export default function ProfilePage() {
           <div className="flex justify-end mb-2">
             <Button onClick={() => navigate("/orders")}>View Orders</Button>
           </div>
-          {user.orders.length > 0 ? (
-            user.orders.map((order) => (
-              <Card key={order._id} className="p-4">
+          {user?.orders && user.orders.length > 0 ? (
+            user.orders.map((order, oIdx) => (
+              <Card key={`${order._id}-${oIdx}`} className="p-4">
                 <p className="font-semibold">Order ID: {order._id}</p>
                 <p className="text-sm text-gray-500">
                   Payment Status: {order.paymentStatus}
                 </p>
                 <p className="text-sm">Subtotal: ₹{order.subtotal}</p>
                 <div className="mt-2 flex gap-4 overflow-x-auto">
-                  {order.products.map((p) => (
-                    <div key={p._id} className="flex flex-col items-center">
-                      <img
-                        src={p.productId?.images?.[0]?.url}
-                        alt={p.productId?.title}
-                        className="h-20 w-20 object-cover rounded-xl"
-                      />
+                  {order.products.map((p, pIdx) => (
+                    <div
+                      key={`${order._id}-${p.productId?._id || pIdx}`}
+                      className="flex flex-col items-center"
+                    >
+                      {p.productId?.images?.[0]?.url && (
+                        <img
+                          src={p.productId.images[0].url}
+                          alt={p.productId.title}
+                          className="h-20 w-20 object-cover rounded-xl"
+                        />
+                      )}
                       <p className="text-sm mt-1">{p.productId?.title}</p>
                     </div>
                   ))}
@@ -276,9 +330,7 @@ export default function ProfilePage() {
               </Card>
             ))
           ) : (
-            <Card className="p-6 text-center text-gray-500">
-              No orders yet.
-            </Card>
+            <Card className="p-6 text-center text-gray-500">No orders yet.</Card>
           )}
         </TabsContent>
 
@@ -290,9 +342,9 @@ export default function ProfilePage() {
                 + Create New Listing
               </Button>
             </div>
-            {listings?.length > 0 ? (
-              listings.map((listing) => (
-                <Card key={listing._id} className="transition-shadow">
+            {listings && listings.length > 0 ? (
+              listings.map((listing, idx) => (
+                <Card key={`${listing._id}-${idx}`} className="transition-shadow">
                   <CardContent className="flex items-center gap-4 p-4">
                     {listing.images?.[0]?.url && (
                       <img
@@ -326,14 +378,13 @@ export default function ProfilePage() {
                 </Card>
               ))
             ) : (
-              <Card className="p-6 text-center text-gray-500">
-                No listings yet.
-              </Card>
+              <Card className="p-6 text-center text-gray-500">No listings yet.</Card>
             )}
           </TabsContent>
         )}
       </Tabs>
 
+      {/* Edit Listing Dialog */}
       {editingListing && (
         <Dialog open={true} onOpenChange={() => setEditingListing(null)}>
           <DialogContent>
@@ -346,10 +397,7 @@ export default function ProfilePage() {
                 <Input
                   value={editingListing.title}
                   onChange={(e) =>
-                    setEditingListing({
-                      ...editingListing,
-                      title: e.target.value,
-                    })
+                    setEditingListing({ ...editingListing, title: e.target.value })
                   }
                 />
               </div>
@@ -373,7 +421,7 @@ export default function ProfilePage() {
                   onChange={(e) =>
                     setEditingListing({
                       ...editingListing,
-                      price: e.target.value,
+                      price: Number(e.target.value),
                     })
                   }
                 />
@@ -396,7 +444,7 @@ export default function ProfilePage() {
         </Dialog>
       )}
 
-     
+      {/* Delete Confirmation */}
       {deleteConfirmId && (
         <Dialog open={true} onOpenChange={() => setDeleteConfirmId(null)}>
           <DialogContent>
@@ -405,10 +453,7 @@ export default function ProfilePage() {
             </DialogHeader>
             <p>Are you sure you want to delete this listing?</p>
             <div className="flex justify-end gap-2 mt-4">
-              <Button
-                variant="outline"
-                onClick={() => setDeleteConfirmId(null)}
-              >
+              <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>
                 Cancel
               </Button>
               <Button

@@ -14,62 +14,36 @@ import { Product } from "../models/product.model.js";
  *         schema:
  *           type: string
  *     responses:
- *       200:
- *         description: List of reviews
- *       404:
- *         description: Product not found
+ *       200: { description: Success }
+ *       404: { description: Product not found }
  */
 export const getProductReviews = async (req, res) => {
-    const { productId } = req.params;
-    const product = await Product.findById(productId);
-    if(!product) return res.status(404).json({ message: "Product not found" });
-    const reviews = await Review.find({ productId }).populate({path: "authorId", select: "-password -__v"});
-    res.status(200).json(reviews);
-}
+  const { productId } = req.params;
+  const product = await Product.findById(productId);
+  if (!product) return res.status(404).json({ message: "Product not found" });
+  const reviews = await Review.find({ productId }).populate("authorId", "-password -__v");
+  res.status(200).json(reviews);
+};
 
 /**
  * @swagger
  * /reviews:
  *   post:
- *     summary: Create a review for a product
+ *     summary: Create a product review
  *     tags: [Reviews]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - rating
- *               - review
- *               - productId
- *             properties:
- *               rating:
- *                 type: number
- *               review:
- *                 type: string
- *               productId:
- *                 type: string
+ *     security: [ { bearerAuth: [] } ]
  *     responses:
- *       201:
- *         description: Review created
- *       400:
- *         description: Already reviewed
- *       404:
- *         description: Product not found
+ *       201: { description: Created }
+ *       400: { description: Already reviewed or invalid }
+ *       404: { description: Product not found }
  */
 export const createProductReview = async (req, res) => {
   const { rating, review, productId } = req.body;
   const userId = req.user._id;
-    if (!productId || !rating) {
-      return res.status(400).json({ message: "Product ID and rating are required" });
-    }
 
-    if (rating < 1 || rating > 5) {
-      return res.status(400).json({ message: "Rating must be between 1 and 5" });
-    }
+  if (!productId || !rating) return res.status(400).json({ message: "Product ID and rating are required" });
+  if (rating < 1 || rating > 5) return res.status(400).json({ message: "Rating must be between 1 and 5" });
+
   const product = await Product.findById(productId);
   if (!product) return res.status(404).json({ message: "Product not found" });
 
@@ -92,10 +66,9 @@ export const createProductReview = async (req, res) => {
  * @swagger
  * /reviews/{reviewId}:
  *   delete:
- *     summary: Delete a review (author or admin only)
+ *     summary: Delete a review
  *     tags: [Reviews]
- *     security:
- *       - bearerAuth: []
+ *     security: [ { bearerAuth: [] } ]
  *     parameters:
  *       - in: path
  *         name: reviewId
@@ -103,12 +76,9 @@ export const createProductReview = async (req, res) => {
  *         schema:
  *           type: string
  *     responses:
- *       200:
- *         description: Review deleted
- *       403:
- *         description: Not authorized
- *       404:
- *         description: Review not found
+ *       200: { description: Deleted }
+ *       403: { description: Forbidden }
+ *       404: { description: Not found }
  */
 export const deleteProductReview = async (req, res) => {
   const { reviewId } = req.params;
@@ -117,7 +87,7 @@ export const deleteProductReview = async (req, res) => {
   if (!review) return res.status(404).json({ message: "Review not found" });
 
   if (review.authorId.toString() !== userId.toString() && req.user.role !== "admin")
-    return res.status(403).json({ message: "Not authorized to delete this review" });
+    return res.status(403).json({ message: "Not authorized" });
 
   const product = await Product.findById(review.productId);
   if (!product) return res.status(404).json({ message: "Product not found" });

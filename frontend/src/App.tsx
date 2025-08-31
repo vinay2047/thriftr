@@ -17,6 +17,7 @@ import OrderDetails from "./pages/orders/components/OrderDetails";
 import AboutPage from "./pages/about/AboutPage";
 import ProfilePage from "./pages/profile/ProfilePage";
 import CreateListing from "./pages/profile/components/CreateListing";
+import CheckoutPage from "./pages/checkout/CheckoutPage";
 
 function App() {
   const {checkAuth}=useAuthStore()
@@ -38,6 +39,7 @@ function App() {
         <Route path="orders/:orderId" element={<OrderDetails/>}/>
         <Route path="/profile" element={<ProfilePage/>} />
         <Route path="create-listing" element={<CreateListing/>} />
+        <Route path="/checkout" element={<CheckoutPage/>}  />
         <Route path="/about" element={<AboutPage/>} />
         <Route path="/IIT2024194/healthz" element={<div>Frontend Alive!</div>} />
       </Routes>

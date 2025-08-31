@@ -1,4 +1,16 @@
 import { Order } from "../models/order.model.js";
+import { User } from "../models/user.model.js";
+import crypto from "crypto";
+import NodeCache from "node-cache";
+
+const idempotencyCache = new NodeCache({ stdTTL: 300 });
+
+function signResponse(body, seed) {
+  return crypto
+    .createHmac("sha256", seed)
+    .update(JSON.stringify(body))
+    .digest("hex");
+}
 
 /**
  * @swagger
@@ -17,60 +29,6 @@ import { Order } from "../models/order.model.js";
  *     responses:
  *       200:
  *         description: Order found
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 _id:
- *                   type: string
- *                 buyerId:
- *                   type: object
- *                   properties:
- *                     name:
- *                       type: string
- *                     contactInfo:
- *                       type: string
- *                     location:
- *                       type: string
- *                 sellerId:
- *                   type: object
- *                   properties:
- *                     name:
- *                       type: string
- *                     contactInfo:
- *                       type: string
- *                     location:
- *                       type: string
- *                 products:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       productId:
- *                         type: object
- *                         properties:
- *                           title:
- *                             type: string
- *                           images:
- *                             type: array
- *                             items:
- *                               type: object
- *                               properties:
- *                                 url:
- *                                   type: string
- *                                 filename:
- *                                   type: string
- *                           price:
- *                             type: number
- *                           SKU:
- *                             type: string
- *                       quantity:
- *                         type: number
- *                 subtotal:
- *                   type: number
- *                 paymentStatus:
- *                   type: string
  *       404:
  *         description: Order not found
  */
@@ -80,12 +38,18 @@ export const getOrderById = async (req, res) => {
   let query = { _id: orderId };
 
   if (user.role === "buyer") query.buyerId = user._id;
-  if (user.role === "seller") query.sellerId = user._id;
+  if (user.role === "seller") query.sellerIds = user._id;
 
   const order = await Order.findOne(query)
-    .populate("buyerId", "name contactInfo location")
-    .populate("sellerId", "name contactInfo location")
-    .populate({ path: "products.productId", select: "title images price SKU" });
+    .populate("buyerId", "name email contactInfo.phoneNo contactInfo.contactEmail location")
+    .populate({
+      path: "products.productId",
+      select: "title images price SKU sellerId",
+      populate: {
+        path: "sellerId",
+        select: "name email contactInfo.phoneNo contactInfo.contactEmail location",
+      },
+    });
 
   if (!order) return res.status(404).json({ message: "Order not found" });
   res.status(200).json(order);
@@ -107,11 +71,19 @@ export const getAllOrders = async (req, res) => {
   const user = req.user;
   let filter = {};
   if (user.role === "buyer") filter.buyerId = user._id;
-  if (user.role === "seller") filter.sellerId = user._id;
+  if (user.role === "seller") filter.sellerIds = user._id;
+
   const orders = await Order.find(filter)
-    .populate("buyerId", "name email")
-    .populate("sellerId", "name email")
-    .populate({ path: "products.productId", select: "title images price" });
+    .populate("buyerId", "name email contactInfo.phoneNo contactInfo.contactEmail location")
+    .populate({
+      path: "products.productId",
+      select: "title images price SKU sellerId",
+      populate: {
+        path: "sellerId",
+        select: "name email contactInfo.phoneNo contactInfo.contactEmail location",
+      },
+    });
+
   res.status(200).json(orders);
 };
 
@@ -130,12 +102,14 @@ export const getAllOrders = async (req, res) => {
  *           schema:
  *             type: object
  *             required:
- *               - sellerId
+ *               - sellerIds
  *               - products
  *               - subtotal
  *             properties:
- *               sellerId:
- *                 type: string
+ *               sellerIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
  *               products:
  *                 type: array
  *                 items:
@@ -147,6 +121,8 @@ export const getAllOrders = async (req, res) => {
  *                       type: integer
  *               subtotal:
  *                 type: number
+ *               paymentStatus:
+ *                 type: string
  *     responses:
  *       201:
  *         description: Order created
@@ -154,15 +130,50 @@ export const getAllOrders = async (req, res) => {
  *         description: Only buyers can create
  */
 export const createOrder = async (req, res) => {
-  const { sellerId, products, subtotal,paymentStatus } = req.body;
+  const { sellerIds, products, subtotal, paymentStatus } = req.body;
   const buyerId = req.user._id;
+  const idempotencyKey = req.headers["idempotency-key"];
 
-  const newOrder = new Order({ buyerId, sellerId, products, subtotal,paymentStatus });
-  await newOrder.save();
+  if (idempotencyKey) {
+    const cached = idempotencyCache.get(idempotencyKey);
+    if (cached) {
+      const signature = signResponse(cached, process.env.ASSIGNMENT_SEED);
+      res.set("X-Signature", signature);
+      return res.status(200).json(cached);
+    }
+  }
 
-  const order = await Order.findById(newOrder._id)
-    .populate("sellerId", "name email")
-    .populate({ path: "products.productId", select: "title images price" });
+  try {
+    const newOrder = new Order({ buyerId, sellerIds, products, subtotal, paymentStatus });
+    await newOrder.save();
 
-  res.status(201).json(order);
+    await User.findByIdAndUpdate(buyerId, { $push: { orders: newOrder._id } });
+    await User.updateMany({ _id: { $in: sellerIds } }, { $push: { orders: newOrder._id } });
+
+    const order = await Order.findById(newOrder._id)
+      .populate({
+        path: "products.productId",
+        select: "title images price SKU sellerId",
+        populate: {
+          path: "sellerId",
+          select: "name email contactInfo.phoneNo contactInfo.contactEmail location",
+        },
+      })
+      .populate("buyerId", "name email contactInfo.phoneNo contactInfo.contactEmail location");
+
+    const responseBody = { success: true, order };
+
+    if (idempotencyKey) {
+      idempotencyCache.set(idempotencyKey, responseBody);
+    }
+
+    const signature = signResponse(responseBody, process.env.ASSIGNMENT_SEED);
+    res.set("X-Signature", signature);
+    res.status(201).json(responseBody);
+  } catch (err) {
+    const responseBody = { success: false, message: "Failed to create order" };
+    const signature = signResponse(responseBody, process.env.ASSIGNMENT_SEED);
+    res.set("X-Signature", signature);
+    res.status(500).json(responseBody);
+  }
 };

@@ -5,36 +5,15 @@ import { User } from "../models/user.model.js";
  * @swagger
  * /users/update:
  *   put:
- *     summary: Update user profile (contact info and location)
+ *     summary: Update user profile
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               contactInfo:
- *                 type: object
- *                 properties:
- *                   phoneNo:
- *                     type: string
- *               location:
- *                 type: object
- *                 properties:
- *                   city:
- *                     type: string
- *                   state:
- *                     type: string
- *                   country:
- *                     type: string
  *     responses:
  *       200:
  *         description: User updated
  *       400:
- *         description: Missing required fields
+ *         description: Missing fields
  *       404:
  *         description: User not found
  */
@@ -66,46 +45,58 @@ export const updateUser = async (req, res) => {
 
   return res.status(200).json(updatedUser);
 };
+
 /**
  * @swagger
  * /users/me:
  *   get:
- *     summary: Get authenticated user details
- *     tags: [User]
+ *     summary: Get current user
+ *     tags: [Users]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Authenticated user profile
+ *         description: User profile
  *       401:
- *         description: Unauthorized (invalid or missing token)
+ *         description: Unauthorized
  *       404:
  *         description: User not found
  */
 export const getUser = async (req, res) => {
-  
-    const userId = req.user._id;
+  const userId = req.user._id;
 
-    const user = await User.findById(userId)
-      .populate({ path: "likes", select: "title images likeCount price" })
-      .populate({
-        path: "orders",
-        select: "products subtotal paymentStatus createdAt",
-        populate: {
-          path: "products.productId", 
-          select: "title images  price SKU"
-        }
-      });
+  const user = await User.findById(userId)
+    .populate({ path: "likes", select: "title images likeCount price" })
+    .populate({
+      path: "orders",
+      select: "products subtotal paymentStatus createdAt",
+      populate: {
+        path: "products.productId",
+        select: "title images price SKU",
+      },
+    });
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
 
-    return res.status(200).json(user); 
-  
+  return res.status(200).json(user);
 };
 
-
+/**
+ * @swagger
+ * /users/likes:
+ *   get:
+ *     summary: Get user likes
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of liked products
+ *       404:
+ *         description: User not found
+ */
 export const getUserLikes = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -120,7 +111,20 @@ export const getUserLikes = async (req, res) => {
   }
 };
 
-
+/**
+ * @swagger
+ * /users/listings:
+ *   get:
+ *     summary: Get user listings
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of user listings
+ *       404:
+ *         description: User not found
+ */
 export const getUserListings = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -128,12 +132,10 @@ export const getUserListings = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    const listings=await Product.find({ sellerId: userId });
+    const listings = await Product.find({ sellerId: userId });
     return res.status(200).json(listings);
   } catch (err) {
     console.error("Error in getUserListings:", err);
     return res.status(500).json({ message: "Server error" });
   }
 };
-
-

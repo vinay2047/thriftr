@@ -13,6 +13,10 @@ async function seedOrders() {
     await mongoose.connect(MONGO_URI);
     console.log("✅ Connected to DB");
 
+    // Clear old orders first
+    await Order.deleteMany({});
+    console.log("🗑️ Deleted existing orders");
+
     // Fetch all buyers, sellers, and products
     const buyers = await User.find({ role: "buyer" });
     const sellers = await User.find({ role: "seller" });
@@ -25,15 +29,15 @@ async function seedOrders() {
 
     const ordersToInsert = [];
 
-    // Let's make 10 orders
+    // Create 10 orders
     for (let i = 0; i < 10; i++) {
       const buyer = buyers[Math.floor(Math.random() * buyers.length)];
      
       const productCount = Math.floor(Math.random() * 4) + 1; // 1-4 items per order
 
-      // Pick random products
       const chosenProducts = [];
       let subtotal = 0;
+      const sellerIdSet = new Set();
 
       for (let j = 0; j < productCount; j++) {
         const product = products[Math.floor(Math.random() * products.length)];
@@ -45,16 +49,15 @@ async function seedOrders() {
         });
 
         subtotal += product.price * quantity;
-      }
 
-      // Pick seller based on one of the chosen products
-      const seller = chosenProducts.length
-        ? products.find((p) => p._id.equals(chosenProducts[0].productId)).sellerId
-        : sellers[Math.floor(Math.random() * sellers.length)]._id;
+        if (product.sellerId) {
+          sellerIdSet.add(product.sellerId.toString());
+        }
+      }
 
       const order = {
         buyerId: buyer._id,
-        sellerId: seller,
+        sellerIds: Array.from(sellerIdSet),
         products: chosenProducts,
         subtotal,
         paymentStatus: "pending",
@@ -63,10 +66,9 @@ async function seedOrders() {
       ordersToInsert.push(order);
     }
 
-    // Insert into DB
     await Order.insertMany(ordersToInsert);
 
-    console.log(`✅ Seeded ${ordersToInsert.length} orders`);
+    console.log(`✅ Seeded ${ordersToInsert.length} new orders`);
     process.exit(0);
   } catch (err) {
     console.error("❌ Error seeding orders:", err);

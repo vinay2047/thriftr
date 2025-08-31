@@ -7,21 +7,15 @@ import { Cart } from "../models/cart.model.js";
  *     CartProduct:
  *       type: object
  *       properties:
- *         _id:
- *           type: string
- *         quantity:
- *           type: integer
+ *         _id: { type: string }
+ *         quantity: { type: integer }
  *         productId:
  *           type: object
  *           properties:
- *             _id:
- *               type: string
- *             title:
- *               type: string
- *             price:
- *               type: number
- *             category:
- *               type: string
+ *             _id: { type: string }
+ *             title: { type: string }
+ *             price: { type: number }
+ *             category: { type: string }
  */
 
 /**
@@ -33,17 +27,7 @@ import { Cart } from "../models/cart.model.js";
  *     security:
  *       - bearerAuth: []
  *     responses:
- *       200:
- *         description: List of products in the cart
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 products:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/CartProduct'
+ *       200: { description: List of products in the cart }
  */
 export const getCartItems = async (req, res) => {
   const userId = req.user._id;
@@ -56,9 +40,7 @@ export const getCartItems = async (req, res) => {
  * @swagger
  * /cart/{productId}:
  *   post:
- *     summary: Add a new product to the cart
- *     description: Adds a product to the user's cart with a default quantity of 1. 
- *                  If the product is already in the cart, a 400 error is returned.
+ *     summary: Add a product to the cart
  *     tags: [Cart]
  *     security:
  *       - bearerAuth: []
@@ -66,31 +48,14 @@ export const getCartItems = async (req, res) => {
  *       - in: path
  *         name: productId
  *         required: true
- *         schema:
- *           type: string
- *         description: ID of the product to add to the cart
+ *         schema: { type: string }
  *     responses:
- *       200:
- *         description: Product successfully added to the cart
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 products:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/CartProduct'
- *       400:
- *         description: Product is already in the cart
+ *       200: { description: Product added to cart }
+ *       400: { description: Product already in cart }
  */
 export const addToCart = async (req, res) => {
   const { productId } = req.params;
   const userId = req.user._id;
-
   let cart = await Cart.findOne({ userId });
   if (!cart) {
     cart = new Cart({ userId, products: [{ productId, quantity: 1 }] });
@@ -105,7 +70,6 @@ export const addToCart = async (req, res) => {
     }
     cart.products.push({ productId, quantity: 1 });
   }
-
   await cart.save();
   await cart.populate("products.productId");
   res.status(200).json({ success: true, products: cart.products });
@@ -123,32 +87,18 @@ export const addToCart = async (req, res) => {
  *       - in: path
  *         name: productId
  *         required: true
- *         schema:
- *           type: string
- *         description: ID of the product to remove from the cart
+ *         schema: { type: string }
  *     responses:
- *       200:
- *         description: Product removed from cart
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 products:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/CartProduct'
+ *       200: { description: Product removed from cart }
  */
 export const removeFromCart = async (req, res) => {
   const { productId } = req.params;
   const userId = req.user._id;
   let cart = await Cart.findOne({ userId });
   if (!cart) return res.status(200).json({ products: [] });
-
   cart.products = cart.products.filter(
     (item) => item.productId.toString() !== productId
   );
-
   await cart.save();
   await cart.populate("products.productId");
   res.status(200).json({ products: cart.products });
@@ -166,49 +116,30 @@ export const removeFromCart = async (req, res) => {
  *       - in: path
  *         name: productId
  *         required: true
- *         schema:
- *           type: string
- *         description: ID of the product to update in the cart
+ *         schema: { type: string }
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - quantity
  *             properties:
- *               quantity:
- *                 type: integer
+ *               quantity: { type: integer }
  *     responses:
- *       200:
- *         description: Quantity updated
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 products:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/CartProduct'
- *       404:
- *         description: Product not in cart
+ *       200: { description: Quantity updated }
+ *       404: { description: Product not in cart }
  */
 export const updateQuantity = async (req, res) => {
   const { productId } = req.params;
   const { quantity } = req.body;
   const userId = req.user._id;
-
   let cart = await Cart.findOne({ userId });
   if (!cart) return res.status(200).json({ products: [] });
-
   const productIndex = cart.products.findIndex(
     (item) => item.productId.toString() === productId
   );
   if (productIndex === -1)
     return res.status(404).json({ message: "Product not in cart" });
-
   cart.products[productIndex].quantity = quantity;
   await cart.save();
   await cart.populate("products.productId");

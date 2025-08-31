@@ -12,28 +12,34 @@ async function syncOrders() {
     await mongoose.connect(MONGO_URI);
     console.log("✅ Connected to DB");
 
+    // Clear orders array for all users first
+    await User.updateMany({}, { $set: { orders: [] } });
+    console.log("🗑️ Cleared orders array for all users");
+
     const orders = await Order.find();
     console.log(`📦 Found ${orders.length} orders`);
 
     for (const order of orders) {
-      const { buyerId, sellerId, _id } = order;
+      const { buyerId, sellerIds, _id } = order;
 
       // Update buyer
       if (buyerId) {
         await User.findByIdAndUpdate(
           buyerId,
-          { $addToSet: { orders: _id } }, // $addToSet prevents duplicates
+          { $addToSet: { orders: _id } },
           { new: true }
         );
       }
 
-      // Update seller
-      if (sellerId) {
-        await User.findByIdAndUpdate(
-          sellerId,
-          { $addToSet: { orders: _id } },
-          { new: true }
-        );
+      // Update all sellers
+      if (Array.isArray(sellerIds)) {
+        for (const sellerId of sellerIds) {
+          await User.findByIdAndUpdate(
+            sellerId,
+            { $addToSet: { orders: _id } },
+            { new: true }
+          );
+        }
       }
     }
 

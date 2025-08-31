@@ -43,23 +43,29 @@ interface UserStore {
   user: User | null;
   fetchUser: () => Promise<void>;
   updateUser: (contactInfo: ContactInfo, location: Location) => Promise<void>;
+  isLoading: boolean
   
 }
 
 export const useUserStore = create<UserStore>((set) => ({
   user: null,
+  isLoading: false,
   fetchUser: async () => {
     try {
+      set({ isLoading: true });
       const res = await axiosInstance.get("/users/me");
-      console.log(res.data);
+      
       set({ user: res.data });
     } catch (err) {
       console.error("Failed to fetch user", err);
+    }finally{
+      set({ isLoading: false });
     }
   },
 
   updateUser: async (contactInfo, location) => {
     try {
+      set({ isLoading: true });
       const res = await axiosInstance.patch(
         "/users/update",
         { contactInfo, location }
@@ -67,6 +73,8 @@ export const useUserStore = create<UserStore>((set) => ({
       set({ user: res.data });
     } catch (err) {
       console.error("Failed to update user", err);
+    }finally {
+      set({ isLoading: false });
     }
   },
 

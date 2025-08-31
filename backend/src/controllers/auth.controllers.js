@@ -4,6 +4,13 @@ import { generateToken } from "../lib/token.js";
 
 /**
  * @swagger
+ * tags:
+ *   name: Auth
+ *   description: Authentication APIs
+ */
+
+/**
+ * @swagger
  * /auth/signup:
  *   post:
  *     summary: Register a new user
@@ -14,43 +21,26 @@ import { generateToken } from "../lib/token.js";
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - name
- *               - email
- *               - password
  *             properties:
- *               name:
- *                 type: string
- *               email:
- *                 type: string
- *               password:
- *                 type: string
- *               role:
- *                 type: string
- *                 enum: [buyer, seller]
+ *               name: { type: string }
+ *               email: { type: string }
+ *               password: { type: string }
+ *               role: { type: string, enum: [buyer, seller] }
  *               contactInfo:
  *                 type: object
  *                 properties:
- *                   phoneNo:
- *                     type: string
- *                   contactEmail:
- *                     type: string
+ *                   phoneNo: { type: string }
+ *                   contactEmail: { type: string }
  *               location:
  *                 type: object
  *                 properties:
- *                   city:
- *                     type: string
- *                   state:
- *                     type: string
- *                   country:
- *                     type: string
+ *                   city: { type: string }
+ *                   state: { type: string }
+ *                   country: { type: string }
  *     responses:
- *       201:
- *         description: User registered successfully
- *       400:
- *         description: Validation error
- *       500:
- *         description: Server error
+ *       201: { description: User registered successfully }
+ *       400: { description: Validation error }
+ *       500: { description: Server error }
  */
 export const signup = async (req, res) => {
   const { name, email, password, role, contactInfo, location } = req.body;
@@ -58,11 +48,11 @@ export const signup = async (req, res) => {
   if (!name || !email || !password) {
     return res
       .status(400)
-      .json({success: false, message: "Name, email, and password are required" });
+      .json({ success: false, message: "Name, email, and password are required" });
   }
 
   if (role && !["buyer", "seller"].includes(role)) {
-    return res.status(400).json({success: false, message: "Invalid role specified" });
+    return res.status(400).json({ success: false, message: "Invalid role specified" });
   }
 
   if (role === "seller") {
@@ -83,7 +73,7 @@ export const signup = async (req, res) => {
 
   const existingUser = await User.findOne({ email });
   if (existingUser) {
-    return res.status(400).json({success: false, message: "User already exists" });
+    return res.status(400).json({ success: false, message: "User already exists" });
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -121,7 +111,7 @@ export const signup = async (req, res) => {
  * @swagger
  * /auth/login:
  *   post:
- *     summary: Login user and return JWT
+ *     summary: Login user
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -129,23 +119,14 @@ export const signup = async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - email
- *               - password
  *             properties:
- *               email:
- *                 type: string
- *               password:
- *                 type: string
+ *               email: { type: string }
+ *               password: { type: string }
  *     responses:
- *       200:
- *         description: Login successful
- *       400:
- *         description: Missing email or password
- *       401:
- *         description: Invalid credentials
- *       404:
- *         description: User not found
+ *       200: { description: Login successful }
+ *       400: { description: Missing email or password }
+ *       401: { description: Invalid credentials }
+ *       404: { description: User not found }
  */
 export const login = async (req, res) => {
   const { email, password } = req.body;
@@ -179,11 +160,10 @@ export const login = async (req, res) => {
  * @swagger
  * /auth/logout:
  *   post:
- *     summary: Logout user and clear JWT cookie
+ *     summary: Logout user
  *     tags: [Auth]
  *     responses:
- *       200:
- *         description: Logout successful
+ *       200: { description: Logout successful }
  */
 export const logout = (req, res) => {
   res.clearCookie("jwt", {
@@ -191,22 +171,20 @@ export const logout = (req, res) => {
     sameSite: "strict",
     secure: process.env.NODE_ENV !== "development",
   });
-  return res.status(200).json({success: true, message: "Logout successful", success: true });
+  return res.status(200).json({ success: true, message: "Logout successful" });
 };
 
 /**
  * @swagger
  * /auth/check:
  *   get:
- *     summary: Check if user is authenticated
+ *     summary: Check authentication status
  *     tags: [Auth]
  *     security:
  *       - bearerAuth: []
  *     responses:
- *       200:
- *         description: User is authenticated
- *       401:
- *         description: Unauthorized
+ *       200: { description: User is authenticated }
+ *       401: { description: Unauthorized }
  */
 export const checkAuth = async (req, res) => {
   const user = req.user;

@@ -15,6 +15,7 @@ export interface User{
     };
 }
 
+
 export interface Product {
   _id: string;
   title: string;
@@ -57,7 +58,13 @@ export type Review = {
   createdAt: string;
   updatedAt:string
 };
+export type ReviewInput = Omit<Review, "_id" | "authorId" | "createdAt" | "updatedAt">;
 
 export interface CartItem extends Product {
   quantity: number;
 }
+
+export type OrderProductInput = {
+  productId: string;
+  quantity: number;
+};

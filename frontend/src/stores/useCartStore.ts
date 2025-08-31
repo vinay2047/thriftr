@@ -12,6 +12,8 @@ interface CartStore {
   isLoading: boolean;
 }
 
+
+
 export const useCartStore = create<CartStore>((set) => ({
   cartItems: [],
   isLoading: false,
@@ -39,7 +41,7 @@ export const useCartStore = create<CartStore>((set) => ({
         set({ isLoading: true });
       const response = await axiosInstance.post(`/cart/add/${productId}`);
       if (response.data.success) {
-        console.log(response.data);
+       
         const cartItems: CartItem[] = response.data.products.map((p: any) => ({
           ...p.productId,
           quantity: p.quantity,

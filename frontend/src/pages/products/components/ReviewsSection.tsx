@@ -5,7 +5,7 @@ import { useReviewStore } from "@/stores/useReviewStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { format } from "date-fns";
 import StarRating from "./StarRating";
-import type { Review } from "@/types";
+import type {  ReviewInput } from "@/types";
 
 type Props = {
   productId: string;
@@ -24,12 +24,12 @@ export default function ReviewsSection({ productId }: Props) {
   }, [productId]);
 
   const handleReviewSubmit = () => {
-    if (!authUser || !productId) return;
-    const newReview: Review = { productId, review: reviewText, rating };
-    createReview(newReview);
-    setReviewText("");
-    setRating(0);
-  };
+  if (!authUser || !productId) return;
+  const newReview: ReviewInput = { productId, review: reviewText, rating };
+  createReview(newReview);
+  setReviewText("");
+  setRating(0);
+};
 
   return (
     <div className="p-4 border rounded-xl shadow-sm">

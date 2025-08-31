@@ -18,10 +18,11 @@ export interface ProductsStore {
   fetchUserLikes: () => Promise<void>;
   toggleLike: (productId: string) => Promise<void>;
   createListing: (formData: FormData) => Promise<Product | undefined>;
-  fetchListings: () => void;
+  fetchListings: () => Promise<void>;   
   updateListing: (productId: string, formData: FormData) => Promise<void>;
   deleteListing: (productId: string) => Promise<void>;
 }
+
 
 export const useProductsStore = create<ProductsStore>((set, get) => ({
   products: [],
